@@ -1,0 +1,103 @@
+scanning '../test/scanner/test09.mod'...
+  1:1: tProcedure
+  1:11: tIdent (print)
+  1:16: tLParens
+  1:17: tIdent (matrix)
+  1:23: tColon
+  1:25: tInteger
+  1:32: tLBrak
+  1:33: tRBrak
+  1:34: tLBrak
+  1:35: tRBrak
+  1:36: tRParens
+  1:37: tSemicolon
+  2:1: tVarDecl
+  2:5: tIdent (i)
+  2:6: tComma
+  2:7: tIdent (j)
+  2:8: tComma
+  2:9: tIdent (N)
+  2:10: tComma
+  2:11: tIdent (M)
+  2:12: tColon
+  2:14: tInteger
+  2:21: tSemicolon
+  3:1: tIdent (sring)
+  3:7: tIdent (s)
+  3:9: tRelOp (=)
+  3:11: tStringConst ("\x12")
+  3:17: tSemicolon
+  4:1: tLongint
+  4:9: tIdent (l)
+  4:11: tRelOp (=)
+  4:13: tNumber (234L)
+  4:17: tSemicolon
+  5:1: tBegin
+  6:3: tIdent (N)
+  6:5: tAssign
+  6:8: tIdent (DIM)
+  6:11: tLParens
+  6:12: tIdent (matrix)
+  6:18: tComma
+  6:20: tNumber (1)
+  6:21: tRParens
+  6:22: tSemicolon
+  7:3: tIdent (M)
+  7:5: tAssign
+  7:8: tIdent (DIM)
+  7:11: tLParens
+  7:12: tIdent (matrix)
+  7:18: tComma
+  7:20: tNumber (2)
+  7:21: tRParens
+  7:22: tSemicolon
+  8:3: tIdent (i)
+  8:5: tAssign
+  8:8: tNumber (0)
+  8:9: tSemicolon
+  10:3: tWhile
+  10:9: tLParens
+  10:10: tIdent (i)
+  10:12: tRelOp (<)
+  10:14: tIdent (N)
+  10:15: tRParens
+  10:17: tDo
+  11:5: tIdent (j)
+  11:7: tAssign
+  11:10: tNumber (0)
+  11:11: tSemicolon
+  12:5: tWhile
+  12:11: tLParens
+  12:12: tIdent (j)
+  12:14: tRelOp (<)
+  12:16: tIdent (M)
+  12:17: tRParens
+  12:19: tDo
+  13:7: tIdent (WriteInt)
+  13:15: tLParens
+  13:16: tIdent (matrix)
+  13:22: tLBrak
+  13:23: tIdent (i)
+  13:24: tRBrak
+  13:25: tLBrak
+  13:26: tIdent (j)
+  13:27: tRBrak
+  13:28: tRParens
+  13:29: tSemicolon
+  13:31: tIdent (WriteChar)
+  13:40: tLParens
+  13:41: tCharConst (\t)
+  13:45: tRParens
+  14:5: tEnd
+  14:8: tSemicolon
+  15:5: tIdent (WriteLn)
+  15:12: tLParens
+  15:13: tRParens
+  16:3: tEnd
+  17:1: tEnd
+  17:5: tIdent (print)
+  17:10: tSemicolon
+  17:11: tEOF
+
+
+Done.

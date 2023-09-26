@@ -51,26 +51,52 @@ using namespace std;
 /// Each member of this enumeration represents a token in SnuPL
 ///
 enum EToken {
-  tDigit=0,                         ///< a digit
-  tLetter,                          ///< a letter
+  tIdent=0,                         ///< identifier
+  tNumber,                          ///< a number
   tPlusMinus,                       ///< '+' or '-'
   tMulDiv,                          ///< '*' or '/'
   tRelOp,                           ///< relational operator
+  tOr,                              ///< '||'
+  tAnd,                             ///< '&&'
+  tNot,                             ///< '!'
   tAssign,                          ///< assignment operator
   tSemicolon,                       ///< a semicolon
+  tColon,                           ///< a colon
   tDot,                             ///< a dot
+  tComma,                           ///< a comma
   tLBrak,                           ///< a left bracket
   tRBrak,                           ///< a right bracket
+  tLParens,                         ///< a left parenthesis
+  tRParens,                         ///< a right parenthesis
+  tCharConst,                       ///< character constant
+  tStringConst,                     ///< string constant
 
   tEOF,                             ///< end of file
   tIOError,                         ///< I/O error
   tInvStringConst,                  ///< invalid string constant
   tUndefined,                       ///< undefined
+  tComment,                         ///< comment
+  tInvCharConst,                    ///< invalid character constant
 
-  // these are not needed for SnuPL/-1 but required by CToken::(un)escape
-  // (and you will need them when implementing SnuPL/2)
-  tCharConst,                       ///< character constant
-  tStringConst,                     ///< string constant
+  tModule,                          ///< 'module'
+  tProcedure,                       ///< 'procedure'
+  tFunction,                        ///< 'function'
+  tExtern,                          ///< 'extern'
+  tVarDecl,                         ///< 'var'
+  tConstDecl,                       ///< 'const'
+  tLongint,                         ///< 'longint'
+  tInteger,                         ///< 'integer'
+  tBoolean,                         ///< 'boolean'
+  tChar,                            ///< 'char'
+  tBegin,                           ///< 'begin'
+  tEnd,                             ///< 'end'
+  tIf,                              ///< 'if'
+  tThen,                            ///< 'then'
+  tElse,                            ///< 'else'
+  tWhile,                           ///< 'while'
+  tDo,                              ///< 'do'
+  tReturn,                          ///< 'return'
+  tBoolConst,                       ///< boolean constant
 };
 
 

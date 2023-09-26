@@ -38,6 +38,7 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
+  ofstream cout("output.txt");
   int i = 1;
   bool use_stdin = argc == 1;
 
@@ -61,7 +62,6 @@ int main(int argc, char *argv[])
       cout << "  " << t << endl;
       if (t.GetType() == tEOF) break;
     }
-
     cout << endl << endl;
 
     i++;
