@@ -1,0 +1,79 @@
+parsing 'test06.mod'...
+successfully parsed.
+  AST:
+    CAstScope: 'test06'
+      symbol table:
+        [[
+          [ *DIM(<ptr(8) to <NULL>>,<integer>) --> <integer>           ]
+          [ *DOFS(<ptr(8) to <NULL>>) --> <integer>           ]
+          [ *ReadInt() --> <integer>           ]
+          [ *ReadLong() --> <longint>           ]
+          [ *WriteChar(<char>) --> <NULL>           ]
+          [ *WriteInt(<integer>) --> <NULL>           ]
+          [ *WriteLn() --> <NULL>           ]
+          [ *WriteLong(<longint>) --> <NULL>           ]
+          [ *WriteStr(<ptr(8) to array of <char>>>) --> <NULL>           ]
+          [ @a        <integer>           a           ]
+          [ @b        <integer>           b           ]
+          [ @b0       <boolean>          b0           ]
+          [ @b1       <boolean>          b1           ]
+          [ *binary(<integer>,<boolean>) --> <NULL>           ]
+          [ @c        <integer>           c           ]
+          [ main     <NULL>           ]
+          [ *unary(<integer>,<boolean>) --> <NULL>           ]
+        ]]
+      statement list:
+        empty.
+      nested scopes:
+        CAstScope: 'unary'
+          symbol table:
+            [[
+              [ %a        <integer>               ]
+              [ %b        <boolean>               ]
+              [ $x        <integer>               ]
+              [ $y        <boolean>               ]
+            ]]
+          statement list:
+            := <integer>
+              [ $x        <integer> ] <integer>
+              neg <integer>
+                [ %a        <integer> ] <integer>
+            := <boolean>
+              [ $y        <boolean> ] <boolean>
+              not <boolean>
+                [ %b        <boolean> ] <boolean>
+          nested scopes:
+            empty.
+        
+        CAstScope: 'binary'
+          symbol table:
+            [[
+              [ %a        <integer>               ]
+              [ %b        <boolean>               ]
+              [ $x        <integer>               ]
+              [ $y        <boolean>               ]
+            ]]
+          statement list:
+            := <integer>
+              [ $x        <integer> ] <integer>
+              neg <integer>
+                mul <integer>
+                  [ %a        <integer> ] <integer>
+                  3 <integer>
+            := <boolean>
+              [ $y        <boolean> ] <boolean>
+              or <boolean>
+                not <boolean>
+                  [ %b        <boolean> ] <boolean>
+                [ %b        <boolean> ] <boolean>
+          nested scopes:
+            empty.
+        
+    
+
+
+run the following command to convert the .dot file into a PDF:
+  dot -Tpdf -otest06.mod.ast.pdf test06.mod.ast.dot
+
+
+Done.

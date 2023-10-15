@@ -1,0 +1,42 @@
+parsing 'test10.mod'...
+successfully parsed.
+  AST:
+    CAstScope: 'test10'
+      symbol table:
+        [[
+          [ *DIM(<ptr(8) to <NULL>>,<integer>) --> <integer>           ]
+          [ *DOFS(<ptr(8) to <NULL>>) --> <integer>           ]
+          [ *ReadInt() --> <integer>           ]
+          [ *ReadLong() --> <longint>           ]
+          [ *WriteChar(<char>) --> <NULL>           ]
+          [ *WriteInt(<integer>) --> <NULL>           ]
+          [ *WriteLn() --> <NULL>           ]
+          [ *WriteLong(<longint>) --> <NULL>           ]
+          [ *WriteStr(<ptr(8) to array of <char>>>) --> <NULL>           ]
+          [ @a        array 100 of <integer>>           a           ]
+          [ @i        <integer>           i           ]
+          [ main     <NULL>           ]
+        ]]
+      statement list:
+        := <integer>
+          [ @i        <integer>           i ] <integer>
+          0 <integer>
+        while cond
+          < <boolean>
+            [ @i        <integer>           i ] <integer>
+            100 <integer>
+        while-body
+          := <integer>
+            [ @a        array 100 of <integer>>           a ] <integer>
+              [ @i        <integer>           i ] <integer>
+            [ @i        <integer>           i ] <integer>
+      nested scopes:
+        empty.
+    
+
+
+run the following command to convert the .dot file into a PDF:
+  dot -Tpdf -otest10.mod.ast.pdf test10.mod.ast.dot
+
+
+Done.

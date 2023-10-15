@@ -1,0 +1,78 @@
+parsing 'test09.mod'...
+successfully parsed.
+  AST:
+    CAstScope: 'test09'
+      symbol table:
+        [[
+          [ *DIM(<ptr(8) to <NULL>>,<integer>) --> <integer>           ]
+          [ *DOFS(<ptr(8) to <NULL>>) --> <integer>           ]
+          [ *ReadInt() --> <integer>           ]
+          [ *ReadLong() --> <longint>           ]
+          [ *WriteChar(<char>) --> <NULL>           ]
+          [ *WriteInt(<integer>) --> <NULL>           ]
+          [ *WriteLn() --> <NULL>           ]
+          [ *WriteLong(<longint>) --> <NULL>           ]
+          [ *WriteStr(<ptr(8) to array of <char>>>) --> <NULL>           ]
+          [ @a        <integer>           a           ]
+          [ @b        <integer>           b           ]
+          [ @c        <integer>           c           ]
+          [ main     <NULL>           ]
+        ]]
+      statement list:
+        := <integer>
+          [ @a        <integer>           a ] <integer>
+          0 <integer>
+        := <integer>
+          [ @b        <integer>           b ] <integer>
+          1 <integer>
+        := <integer>
+          [ @c        <integer>           c ] <integer>
+          2 <integer>
+        if cond
+          > <boolean>
+            [ @a        <integer>           a ] <integer>
+            [ @b        <integer>           b ] <integer>
+        if-body
+          := <integer>
+            [ @c        <integer>           c ] <integer>
+            sub <integer>
+              [ @a        <integer>           a ] <integer>
+              [ @b        <integer>           b ] <integer>
+        else-body
+          empty.
+        if cond
+          > <boolean>
+            [ @b        <integer>           b ] <integer>
+            [ @c        <integer>           c ] <integer>
+        if-body
+          := <integer>
+            [ @a        <integer>           a ] <integer>
+            sub <integer>
+              [ @b        <integer>           b ] <integer>
+              [ @c        <integer>           c ] <integer>
+        else-body
+          := <integer>
+            [ @a        <integer>           a ] <integer>
+            sub <integer>
+              [ @c        <integer>           c ] <integer>
+              [ @b        <integer>           b ] <integer>
+        while cond
+          > <boolean>
+            [ @a        <integer>           a ] <integer>
+            0 <integer>
+        while-body
+          := <integer>
+            [ @a        <integer>           a ] <integer>
+            sub <integer>
+              [ @a        <integer>           a ] <integer>
+              1 <integer>
+      nested scopes:
+        empty.
+    
+
+
+run the following command to convert the .dot file into a PDF:
+  dot -Tpdf -otest09.mod.ast.pdf test09.mod.ast.dot
+
+
+Done.

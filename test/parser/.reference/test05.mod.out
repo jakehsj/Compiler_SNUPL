@@ -1,0 +1,74 @@
+parsing 'test05.mod'...
+successfully parsed.
+  AST:
+    CAstScope: 'test05'
+      symbol table:
+        [[
+          [ *DIM(<ptr(8) to <NULL>>,<integer>) --> <integer>           ]
+          [ *DOFS(<ptr(8) to <NULL>>) --> <integer>           ]
+          [ *ReadInt() --> <integer>           ]
+          [ *ReadLong() --> <longint>           ]
+          [ *WriteChar(<char>) --> <NULL>           ]
+          [ *WriteInt(<integer>) --> <NULL>           ]
+          [ *WriteLn() --> <NULL>           ]
+          [ *WriteLong(<longint>) --> <NULL>           ]
+          [ *WriteStr(<ptr(8) to array of <char>>>) --> <NULL>           ]
+          [ @a        <integer>           a           ]
+          [ *bar(<integer>) --> <integer>           ]
+          [ *foo(<integer>) --> <NULL>           ]
+          [ main     <NULL>           ]
+        ]]
+      statement list:
+        := <integer>
+          [ @a        <integer>           a ] <integer>
+          call [ *bar(<integer>) --> <integer> ] <integer>
+            73 <integer>
+        call [ *foo(<integer>) --> <NULL> ] <NULL>
+          75 <integer>
+      nested scopes:
+        CAstScope: 'bar'
+          symbol table:
+            [[
+              [ %a        <integer>               ]
+            ]]
+          statement list:
+            return <integer>
+              add <integer>
+                [ %a        <integer> ] <integer>
+                1 <integer>
+          nested scopes:
+            empty.
+        
+        CAstScope: 'foo'
+          symbol table:
+            [[
+              [ %a        <integer>               ]
+              [ $t1       <integer>               ]
+              [ $t2       <integer>               ]
+              [ $t3       <integer>               ]
+            ]]
+          statement list:
+            := <integer>
+              [ $t1       <integer> ] <integer>
+              [ %a        <integer> ] <integer>
+            := <integer>
+              [ $t2       <integer> ] <integer>
+              add <integer>
+                [ %a        <integer> ] <integer>
+                [ $t1       <integer> ] <integer>
+            := <integer>
+              [ $t3       <integer> ] <integer>
+              add <integer>
+                [ %a        <integer> ] <integer>
+                [ $t2       <integer> ] <integer>
+          nested scopes:
+            empty.
+        
+    
+
+
+run the following command to convert the .dot file into a PDF:
+  dot -Tpdf -otest05.mod.ast.pdf test05.mod.ast.dot
+
+
+Done.

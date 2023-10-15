@@ -1,0 +1,38 @@
+parsing 'test07.mod'...
+successfully parsed.
+  AST:
+    CAstScope: 'test07'
+      symbol table:
+        [[
+          [ *DIM(<ptr(8) to <NULL>>,<integer>) --> <integer>           ]
+          [ *DOFS(<ptr(8) to <NULL>>) --> <integer>           ]
+          [ *ReadInt() --> <integer>           ]
+          [ *ReadLong() --> <longint>           ]
+          [ *WriteChar(<char>) --> <NULL>           ]
+          [ *WriteInt(<integer>) --> <NULL>           ]
+          [ *WriteLn() --> <NULL>           ]
+          [ *WriteLong(<longint>) --> <NULL>           ]
+          [ *WriteStr(<ptr(8) to array of <char>>>) --> <NULL>           ]
+          [ @c        <char>           c           ]
+          [ main     <NULL>           ]
+        ]]
+      statement list:
+        := <char>
+          [ @c        <char>           c ] <char>
+          49 <char>
+        := <char>
+          [ @c        <char>           c ] <char>
+          10 <char>
+        := <char>
+          [ @c        <char>           c ] <char>
+          65 <char>
+      nested scopes:
+        empty.
+    
+
+
+run the following command to convert the .dot file into a PDF:
+  dot -Tpdf -otest07.mod.ast.pdf test07.mod.ast.dot
+
+
+Done.

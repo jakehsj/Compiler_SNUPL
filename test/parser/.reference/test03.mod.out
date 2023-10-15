@@ -1,0 +1,59 @@
+parsing 'test03.mod'...
+successfully parsed.
+  AST:
+    CAstScope: 'test03'
+      symbol table:
+        [[
+          [ *DIM(<ptr(8) to <NULL>>,<integer>) --> <integer>           ]
+          [ *DOFS(<ptr(8) to <NULL>>) --> <integer>           ]
+          [ *ReadInt() --> <integer>           ]
+          [ *ReadLong() --> <longint>           ]
+          [ *WriteChar(<char>) --> <NULL>           ]
+          [ *WriteInt(<integer>) --> <NULL>           ]
+          [ *WriteLn() --> <NULL>           ]
+          [ *WriteLong(<longint>) --> <NULL>           ]
+          [ *WriteStr(<ptr(8) to array of <char>>>) --> <NULL>           ]
+          [ @a        <integer>           a           ]
+          [ @b        <integer>           b           ]
+          [ @c        <integer>           c           ]
+          [ main     <NULL>           ]
+        ]]
+      statement list:
+        := <integer>
+          [ @a        <integer>           a ] <integer>
+          add <integer>
+            add <integer>
+              [ @a        <integer>           a ] <integer>
+              [ @b        <integer>           b ] <integer>
+            [ @c        <integer>           c ] <integer>
+        := <integer>
+          [ @b        <integer>           b ] <integer>
+          sub <integer>
+            sub <integer>
+              [ @a        <integer>           a ] <integer>
+              [ @b        <integer>           b ] <integer>
+            [ @c        <integer>           c ] <integer>
+        := <integer>
+          [ @c        <integer>           c ] <integer>
+          add <integer>
+            [ @a        <integer>           a ] <integer>
+            mul <integer>
+              [ @b        <integer>           b ] <integer>
+              [ @c        <integer>           c ] <integer>
+        := <integer>
+          [ @b        <integer>           b ] <integer>
+          div <integer>
+            add <integer>
+              [ @a        <integer>           a ] <integer>
+              [ @b        <integer>           b ] <integer>
+            [ @c        <integer>           c ] <integer>
+      nested scopes:
+        empty.
+    
+
+
+run the following command to convert the .dot file into a PDF:
+  dot -Tpdf -otest03.mod.ast.pdf test03.mod.ast.dot
+
+
+Done.
