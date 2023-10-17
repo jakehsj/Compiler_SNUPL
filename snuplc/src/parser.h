@@ -117,6 +117,11 @@ class CParser {
 
     CAstDesignator*   letter(CAstScope *s);
     CAstConstant*     number(void);
+    
+    void constDeclaration(CAstScope *scope);
+    void procDeclaration(CAstScope *scope);
+    void varDeclaration(CAstScope *scope, bool isConst);
+    void varDecl(CAstScope *scope, bool isConst);
 
     /// @}
 
