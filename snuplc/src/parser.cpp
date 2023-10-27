@@ -207,10 +207,10 @@ CAstModule *CParser::module(void) {
         varDeclaration(scope);
         break;
       case tFunction:
-        procDeclaration(scope);
+        procedureDecl(scope);
         break;
       case tProcedure:
-        procDeclaration(scope);
+        procedureDecl(scope);
         break;
       default:
         SetError(t1, "invalid declaration");
@@ -277,7 +277,7 @@ void CParser::varDeclaration(CAstScope *scope) {
       CSymbol *s = scope->CreateVar(i, ty);
       scope->GetSymbolTable()->AddSymbol(s);
     }
-    Consume(tSemicolon);  // Since Follow(varDeclaration) = {tBegin}
+    Consume(tSemicolon);  
   }
   // if (_scanner->Peek().GetType() == tSemicolon) {
   //   Consume(tSemicolon);
@@ -342,8 +342,8 @@ CType *CParser::varDecl(vector<string> &idents) {
   return ty;
 }
 
-void CParser::procDeclaration(CAstScope *scope) {
-  //   procedureDecl     = "procedure" ident [ formalParam ] ";".
+void CParser::procedureDecl(CAstScope *scope) {
+  // procedureDecl     = "procedure" ident [ formalParam ] ";".
   // functionDecl      = "function" ident [ formalParam ] ":" type ";".
   // formalParam       = "(" [ varDeclSequence ] ")".
   // varDeclSequence   = varDecl { ";" varDecl }.
@@ -505,25 +505,19 @@ CAstStatement *CParser::statSequence(CAstScope *s) {
         case tIdent: {
           CToken t1 = _scanner->Peek();
           ESymbolType stype;
-          try {
-            stype = s->GetSymbolTable()
-                        ->FindSymbol(t1.GetValue(), sLocal)
-                        ->GetSymbolType();
-          } catch (exception &e) {
-            stype = s->GetSymbolTable()
+          stype = s->GetSymbolTable()
                         ->FindSymbol(t1.GetValue(), sGlobal)
                         ->GetSymbolType();
-          }
           if (stype == stProcedure)
             st = subroutineCall(s);
           else
             st = assignment(s);
           break;
         }
-        case tElse:
-          break;
-        case tEnd:
-          break;
+        // case tElse:
+        //   break;
+        // case tEnd:
+        //   break;
         default:
           SetError(_scanner->Peek(), "statement expected.");
           break;
@@ -535,8 +529,8 @@ CAstStatement *CParser::statSequence(CAstScope *s) {
         tail->SetNext(st);
       tail = st;
 
-      if (_scanner->Peek().GetType() == tEnd) break;
-      if (_scanner->Peek().GetType() == tElse) break;
+      // if (_scanner->Peek().GetType() == tEnd) break;
+      // if (_scanner->Peek().GetType() == tElse) break;
       if(_scanner->Peek().GetType() == tSemicolon){
         Consume(tSemicolon);
       }
@@ -802,16 +796,9 @@ CAstExpression *CParser::factor(CAstScope *s) {
       // qualident | subroutineCall
       CToken t1 = _scanner->Peek();
       ESymbolType stype;
-      CAstStatement *st;
-      try {
-        stype = s->GetSymbolTable()
-                    ->FindSymbol(t1.GetValue(), sLocal)
-                    ->GetSymbolType();
-      } catch (exception &e) {
-        stype = s->GetSymbolTable()
-                    ->FindSymbol(t1.GetValue(), sGlobal)
-                    ->GetSymbolType();
-      }
+      stype = s->GetSymbolTable()
+                  ->FindSymbol(t1.GetValue(), sGlobal)
+                  ->GetSymbolType();
       if (stype == stProcedure) {
         n = functionCall(s);
       } else {

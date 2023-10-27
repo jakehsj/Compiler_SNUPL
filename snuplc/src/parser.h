@@ -121,7 +121,7 @@ class CParser {
   CAstConstant *number(void);
 
   void constDeclaration(CAstScope *scope);
-  void procDeclaration(CAstScope *scope);
+  void procedureDecl(CAstScope *scope);
   void varDeclaration(CAstScope *scope);
   CType *varDecl(vector<string> &idents);
 
