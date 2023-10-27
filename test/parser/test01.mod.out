@@ -1,7 +1,7 @@
-parsing '../test/parser/test08.mod'...
+parsing '../test/parser/test01.mod'...
 successfully parsed.
   AST:
-    CAstScope: 'test08'
+    CAstScope: 'test01'
       symbol table:
         [[
           [ *DIM(<ptr(8) to <NULL>>,<integer>) --> <integer>           ]
@@ -13,21 +13,17 @@ successfully parsed.
           [ *WriteLn() --> <NULL>           ]
           [ *WriteLong(<integer>) --> <NULL>           ]
           [ *WriteStr(<ptr(8) to array of <char>>>) --> <NULL>           ]
-          [ @_str_1   array 14 of <char>>      _str_1           ]
-            [ data: "Hello, world!" ]
           [ main     <NULL>           ]
         ]]
       statement list:
-        call [ *WriteStr(<ptr(8) to array of <char>>>) --> <NULL> ] <NULL>
-          "Hello, world!" <INVALID>
-        call [ *WriteLn() --> <NULL> ] <NULL>
+        empty.
       nested scopes:
         empty.
     
 
 
 run the following command to convert the .dot file into a PDF:
-  dot -Tpdf -o../test/parser/test08.mod.ast.pdf ../test/parser/test08.mod.ast.dot
+  dot -Tpdf -o../test/parser/test01.mod.ast.pdf ../test/parser/test01.mod.ast.dot
 
 
 Done.

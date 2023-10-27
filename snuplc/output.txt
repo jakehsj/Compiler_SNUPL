@@ -1,28 +1,64 @@
-scanning '../test/parser/test07.mod'...
-  8:1: tModule
-  8:8: tIdent (test07)
-  8:14: tSemicolon
-  10:1: tVarDecl
-  10:5: tIdent (c)
-  10:6: tColon
-  10:8: tChar
-  10:12: tSemicolon
-  12:1: tBegin
-  13:3: tIdent (c)
-  13:5: tAssign
-  13:8: tCharConst (1)
-  13:11: tSemicolon
-  14:3: tIdent (c)
-  14:5: tAssign
-  14:8: tCharConst (?)
-  14:12: tSemicolon
-  15:3: tIdent (c)
-  15:5: tAssign
-  15:8: tCharConst (A)
-  16:1: tEnd
-  16:5: tIdent (test07)
-  16:11: tDot
-  18:1: tEOF
+scanning '../test/scanner/full.mod'...
+  4:1: tModule
+  5:1: tProcedure
+  6:1: tFunction
+  7:1: tExtern
+  8:1: tVarDecl
+  9:1: tConstDecl
+  10:1: tLongint
+  11:1: tInteger
+  12:1: tBoolean
+  13:1: tChar
+  14:1: tBegin
+  15:1: tEnd
+  16:1: tIf
+  17:1: tThen
+  18:1: tElse
+  19:1: tWhile
+  20:1: tDo
+  21:1: tReturn
+  22:1: tBoolConst (true)
+  23:1: tBoolConst (false)
+  29:1: tAssign
+  30:1: tPlusMinus (+)
+  31:1: tPlusMinus (-)
+  32:1: tMulDiv (*)
+  33:1: tMulDiv (/)
+  34:1: tOr
+  35:1: tAnd
+  36:1: tNot
+  42:1: tRelOp (=)
+  43:1: tRelOp (#)
+  44:1: tRelOp (<)
+  45:1: tRelOp (<=)
+  46:1: tRelOp (>=)
+  47:1: tRelOp (>)
+  53:1: tComma
+  54:1: tSemicolon
+  55:1: tColon
+  56:1: tDot
+  57:1: tLParens
+  58:1: tRParens
+  59:1: tLBrak
+  60:1: tRBrak
+  66:1: tIdent (variable)
+  67:1: tIdent (_temp1)
+  73:1: tNumber (0)
+  74:1: tNumber (1)
+  75:1: tNumber (7375)
+  76:1: tNumber (22575)
+  82:1: tBoolConst (true)
+  83:1: tBoolConst (false)
+  89:1: tCharConst (a)
+  90:1: tCharConst (\n)
+  91:1: tCharConst (\t)
+  92:1: tCharConst (\0)
+  93:1: tCharConst (")
+  94:1: tCharConst (\\)
+  95:1: tCharConst (\')
+  101:1: tStringConst (hello, world!)
+  102:1: tStringConst (string\twith\\escape\ncharacters)
+  103:1: tEOF
 
 
 Done.

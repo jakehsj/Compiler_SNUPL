@@ -894,8 +894,6 @@ CAstConstant *CParser::charConst(void) {
       return new CAstConstant(t, CTypeManager::Get()->GetChar(), '\\');
     else if(s[1] == '\'')
       return new CAstConstant(t, CTypeManager::Get()->GetChar(), '\'');
-    else if(s[1] == '\"')
-      return new CAstConstant(t, CTypeManager::Get()->GetChar(), '\"');
     else
       SetError(t, "invalid character");
   }

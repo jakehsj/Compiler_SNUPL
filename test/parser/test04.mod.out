@@ -4,25 +4,25 @@ successfully parsed.
     CAstScope: 'test04'
       symbol table:
         [[
-          [ *DIM(<ptr(8) to <NULL>>) --> <integer>           ]
+          [ *DIM(<ptr(8) to <NULL>>,<integer>) --> <integer>           ]
           [ *DOFS(<ptr(8) to <NULL>>) --> <integer>           ]
           [ *ReadInt() --> <integer>           ]
-          [ *ReadLong() --> <NULL>           ]
+          [ *ReadLong() --> <longint>           ]
           [ *WriteChar(<char>) --> <NULL>           ]
           [ *WriteInt(<integer>) --> <NULL>           ]
           [ *WriteLn() --> <NULL>           ]
           [ *WriteLong(<integer>) --> <NULL>           ]
-          [ *WriteString(<ptr(8) to <char>>) --> <NULL>           ]
+          [ *WriteStr(<ptr(8) to array of <char>>>) --> <NULL>           ]
           [ @a        <integer>           a           ]
           [ *bar() --> <integer>           ]
-          [ *foo() --> <integer>           ]
+          [ *foo() --> <NULL>           ]
           [ main     <NULL>           ]
         ]]
       statement list:
         := <integer>
           [ @a        <integer>           a ] <integer>
           call [ *bar() --> <integer> ] <integer>
-        call [ *foo() --> <integer> ] <integer>
+        call [ *foo() --> <NULL> ] <NULL>
       nested scopes:
         CAstScope: 'bar'
           symbol table:

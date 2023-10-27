@@ -6,7 +6,7 @@
 //
 module test10;
 
-var a: integer[100];
+var a: integer[100][5];
     i: integer;
 
 begin

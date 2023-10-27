@@ -22,7 +22,7 @@ successfully parsed.
           49 <char>
         := <char>
           [ @c        <char>           c ] <char>
-          63 <char>
+          10 <char>
         := <char>
           [ @c        <char>           c ] <char>
           65 <char>

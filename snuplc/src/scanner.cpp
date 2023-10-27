@@ -551,7 +551,6 @@ CToken* CScanner::Scan()
         if(res != cOkay) token = tInvCharConst;
         else token = tCharConst;
         tokval = c;
-        tokval = CToken::unescape(tokval);
       } else if (c == '\"'){
         tokval = "";
         ECharacter res = GetCharacter(c, tStringConst);
