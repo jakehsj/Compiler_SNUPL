@@ -225,13 +225,13 @@ CAstModule *CParser::module(void) {
     statseq = statSequence(scope);
     scope->SetStatementSequence(statseq);
   }
-  
+
   Consume(tEnd);
   Consume(tIdent, &t);
-  if (id != t.GetValue())
-	{
-		SetError(t, "Module identifier mismatch (" + id + " and " + t.GetValue() + ")");
-	}
+  if (id != t.GetValue()) {
+    SetError(
+        t, "Module identifier mismatch (" + id + " and " + t.GetValue() + ")");
+  }
   Consume(tDot);
   return scope;
 }
@@ -277,19 +277,19 @@ void CParser::varDeclaration(CAstScope *scope) {
       CSymbol *s = scope->CreateVar(i, ty);
       scope->GetSymbolTable()->AddSymbol(s);
     }
-    Consume(tSemicolon);// Since Follow(varDeclaration) = {tBegin}
+    Consume(tSemicolon);  // Since Follow(varDeclaration) = {tBegin}
   }
-    // if (_scanner->Peek().GetType() == tSemicolon) {
-    //   Consume(tSemicolon);
-    //   if (_scanner->Peek().GetType() ==
-    //       tIdent) {  // Since Follow(varDeclaration) = {tBegin}
-    //     Consume(tVarDecl);
-    //   }
-    // }
+  // if (_scanner->Peek().GetType() == tSemicolon) {
+  //   Consume(tSemicolon);
+  //   if (_scanner->Peek().GetType() ==
+  //       tIdent) {  // Since Follow(varDeclaration) = {tBegin}
+  //     Consume(tVarDecl);
+  //   }
+  // }
   // }
 }
 
-CType *CParser::varDecl(vector<string>& idents) {
+CType *CParser::varDecl(vector<string> &idents) {
   //  varDecl           = ident { "," ident } ":" tm.
   CToken t;
   while (_scanner->Peek().GetType() == tIdent) {
@@ -344,6 +344,11 @@ CType *CParser::varDecl(vector<string>& idents) {
 }
 
 void CParser::procDeclaration(CAstScope *scope) {
+  //   procedureDecl     = "procedure" ident [ formalParam ] ";".
+  // functionDecl      = "function" ident [ formalParam ] ":" type ";".
+  // formalParam       = "(" [ varDeclSequence ] ")".
+  // varDeclSequence   = varDecl { ";" varDecl }.
+
   CToken t = _scanner->Get();
   EToken subroutineType = t.GetType();
   CToken name = _scanner->Get();
@@ -364,6 +369,7 @@ void CParser::procDeclaration(CAstScope *scope) {
     Consume(tRParens);
   }
   // Type
+  Consume(tColon);
   CType *returnType;
   if (subroutineType == tFunction) {
     CToken t = (_scanner->Get());
@@ -419,8 +425,7 @@ void CParser::procDeclaration(CAstScope *scope) {
   // add parameters to symbol table
   for (auto &varDecl : varDeclSequence) {
     for (auto &ident : varDecl.first) {
-      proc->AddParam(
-          new CSymParam(proc->GetNParams(), ident, varDecl.second));
+      proc->AddParam(new CSymParam(proc->GetNParams(), ident, varDecl.second));
     }
   }
 
