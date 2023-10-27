@@ -1,0 +1,33 @@
+parsing '../test/parser/test08.mod'...
+successfully parsed.
+  AST:
+    CAstScope: 'test08'
+      symbol table:
+        [[
+          [ *DIM(<ptr(8) to <NULL>>) --> <integer>           ]
+          [ *DOFS(<ptr(8) to <NULL>>) --> <integer>           ]
+          [ *ReadInt() --> <integer>           ]
+          [ *ReadLong() --> <NULL>           ]
+          [ *WriteChar(<char>) --> <NULL>           ]
+          [ *WriteInt(<integer>) --> <NULL>           ]
+          [ *WriteLn() --> <NULL>           ]
+          [ *WriteLong(<integer>) --> <NULL>           ]
+          [ *WriteStr(<ptr(8) to <char>>) --> <NULL>           ]
+          [ @_str_1   array 14 of <char>>      _str_1           ]
+            [ data: "Hello, world!" ]
+          [ main     <NULL>           ]
+        ]]
+      statement list:
+        call [ *WriteStr(<ptr(8) to <char>>) --> <NULL> ] <NULL>
+          "Hello, world!" <INVALID>
+        call [ *WriteLn() --> <NULL> ] <NULL>
+      nested scopes:
+        empty.
+    
+
+
+run the following command to convert the .dot file into a PDF:
+  dot -Tpdf -o../test/parser/test08.mod.ast.pdf ../test/parser/test08.mod.ast.dot
+
+
+Done.

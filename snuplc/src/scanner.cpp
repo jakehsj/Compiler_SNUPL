@@ -276,10 +276,10 @@ string CToken::escape(EToken type, const string text)
     if (type == tCharConst) break;
     t++;
   }
-  if(type == tStringConst){
-    s = '\"' + s;
-    s += '\"';
-  }
+  // if(type == tStringConst){
+  //   s = '\"' + s;
+  //   s += '\"';
+  // }
   return s;
 }
 

@@ -1,0 +1,53 @@
+parsing '../test/parser/test04.mod'...
+successfully parsed.
+  AST:
+    CAstScope: 'test04'
+      symbol table:
+        [[
+          [ *DIM(<ptr(8) to <NULL>>) --> <integer>           ]
+          [ *DOFS(<ptr(8) to <NULL>>) --> <integer>           ]
+          [ *ReadInt() --> <integer>           ]
+          [ *ReadLong() --> <NULL>           ]
+          [ *WriteChar(<char>) --> <NULL>           ]
+          [ *WriteInt(<integer>) --> <NULL>           ]
+          [ *WriteLn() --> <NULL>           ]
+          [ *WriteLong(<integer>) --> <NULL>           ]
+          [ *WriteString(<ptr(8) to <char>>) --> <NULL>           ]
+          [ @a        <integer>           a           ]
+          [ *bar() --> <integer>           ]
+          [ *foo() --> <integer>           ]
+          [ main     <NULL>           ]
+        ]]
+      statement list:
+        := <integer>
+          [ @a        <integer>           a ] <integer>
+          call [ *bar() --> <integer> ] <integer>
+        call [ *foo() --> <integer> ] <integer>
+      nested scopes:
+        CAstScope: 'bar'
+          symbol table:
+            [[
+            ]]
+          statement list:
+            return <integer>
+              1 <integer>
+          nested scopes:
+            empty.
+        
+        CAstScope: 'foo'
+          symbol table:
+            [[
+            ]]
+          statement list:
+            empty.
+          nested scopes:
+            empty.
+        
+    
+
+
+run the following command to convert the .dot file into a PDF:
+  dot -Tpdf -o../test/parser/test04.mod.ast.pdf ../test/parser/test04.mod.ast.dot
+
+
+Done.
