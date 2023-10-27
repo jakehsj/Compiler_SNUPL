@@ -139,8 +139,8 @@ class CParser {
   // CAstStringConstant *stringCon(CAstScope *scope);
 
   CAstConstant *boolConst(void);
-  CAstStringConstant *stringCon(CAstScope *scope);
-  CAstConstant *charCon(void);
+  CAstStringConstant *stringConst(CAstScope *scope);
+  CAstConstant *charConst(void);
 
   CAstDesignator *qualident(CAstScope *scope);
   /// @}

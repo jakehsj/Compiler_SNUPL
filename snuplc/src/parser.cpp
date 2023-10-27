@@ -88,7 +88,6 @@ CAstNode *CParser::Parse(void) {
   } catch (...) {
     _module = NULL;
   }
-
   return _module;
 }
 
@@ -145,7 +144,7 @@ void CParser::InitSymbolTable(CSymtab *st) {
 
   // TODO (phase 2)
   // add remaining predefined functions here
-  f = new CSymProc("ReadLong", tm->GetNull(), true);
+  f = new CSymProc("ReadLong", tm->GetLongint(), true);
   st->AddSymbol(f);
 
   f = new CSymProc("WriteInt", tm->GetNull(), true);
@@ -160,8 +159,8 @@ void CParser::InitSymbolTable(CSymtab *st) {
   f->AddParam(new CSymParam(0, "c", tm->GetChar()));
   st->AddSymbol(f);
 
-  f = new CSymProc("WriteString", tm->GetNull(), true);
-  f->AddParam(new CSymParam(0, "string", tm->GetPointer(tm->GetChar())));
+  f = new CSymProc("WriteStr", tm->GetNull(), true);
+  f->AddParam(new CSymParam(0, "string", tm->GetPointer(tm->GetArray(CArrayType::OPEN,tm->GetChar()))));
   st->AddSymbol(f);
 
   f = new CSymProc("WriteLn", tm->GetNull(), true);
@@ -169,6 +168,7 @@ void CParser::InitSymbolTable(CSymtab *st) {
 
   f = new CSymProc("DIM", tm->GetInteger(), true);
   f->AddParam(new CSymParam(0, "array", tm->GetPointer(tm->GetNull())));
+  f->AddParam(new CSymParam(1, "dim", tm->GetInteger()));
   st->AddSymbol(f);
 
   f = new CSymProc("DOFS", tm->GetInteger(), true);
@@ -307,7 +307,6 @@ CType *CParser::varDecl(vector<string> &idents) {
   vector<CAstConstant *> cAstConsts;
   while (_scanner->Peek().GetType() == tLBrak) {
     Consume(tLBrak);
-    Consume(tInteger, &t);
     CAstConstant *c = number();
     Consume(tRBrak);
   }
@@ -369,9 +368,9 @@ void CParser::procDeclaration(CAstScope *scope) {
     Consume(tRParens);
   }
   // Type
-  Consume(tColon);
   CType *returnType;
   if (subroutineType == tFunction) {
+    Consume(tColon);
     CToken t = (_scanner->Get());
     EToken baseType = t.GetType();
     vector<CAstConstant *> cAstConsts;
@@ -411,6 +410,9 @@ void CParser::procDeclaration(CAstScope *scope) {
           CTypeManager::Get()->GetArray(constExpr->GetValue(), returnType);
       returnType = const_cast<CType *>(cty);
     }
+  }else {
+    const CType *cty =  (CTypeManager::Get()->GetNull());
+    returnType = const_cast<CType *>(cty);
   }
   Consume(tSemicolon);
   bool isExtern = false;
@@ -425,17 +427,28 @@ void CParser::procDeclaration(CAstScope *scope) {
   // add parameters to symbol table
   for (auto &varDecl : varDeclSequence) {
     for (auto &ident : varDecl.first) {
-      proc->AddParam(new CSymParam(proc->GetNParams(), ident, varDecl.second));
+      CSymParam *csymParam =  new CSymParam(proc->GetNParams(), ident, varDecl.second);
+      proc->AddParam(csymParam);
+      astProc->GetSymbolTable()->AddSymbol(csymParam);
     }
   }
-
+        
   if (!isExtern) {
-    // parse subroutine body
+    if (_scanner->Peek().GetType() == tConstDecl) {
+      constDeclaration(astProc);
+    }
+
+    if(_scanner->Peek().GetType() == tVarDecl){
+      varDeclaration(astProc);
+    }
+    
     Consume(tBegin);
-    CAstStatement *statseq = statSequence(scope);
+    CAstStatement *statseq = statSequence(astProc);
     astProc->SetStatementSequence(statseq);
     Consume(tEnd);
+    Consume(tIdent);
   }
+  Consume(tSemicolon);
 }
 
 CAstStatement *CParser::statSequence(CAstScope *s) {
@@ -477,9 +490,9 @@ CAstStatement *CParser::statSequence(CAstScope *s) {
       switch (_scanner->Peek().GetType()) {
         // statement ::= assignment | subroutineCall | ifStatement |
         // whileStatement | returnStatement.
-        case tCharConst:
-          st = assignment(s);
-          break;
+        // case tCharConst:
+        //   st = assignment(s);
+        //   break;
         case tIf:
           st = ifStatement(s);
           break;
@@ -515,7 +528,6 @@ CAstStatement *CParser::statSequence(CAstScope *s) {
           SetError(_scanner->Peek(), "statement expected.");
           break;
       }
-
       assert(st != NULL);
       if (head == NULL)
         head = st;
@@ -525,10 +537,14 @@ CAstStatement *CParser::statSequence(CAstScope *s) {
 
       if (_scanner->Peek().GetType() == tEnd) break;
       if (_scanner->Peek().GetType() == tElse) break;
-      Consume(tSemicolon);
+      if(_scanner->Peek().GetType() == tSemicolon){
+        Consume(tSemicolon);
+      }
+      else {
+        break;
+      }
     } while (!_abort);
   }
-
   return head;
 }
 
@@ -589,10 +605,10 @@ CAstStatReturn *CParser::returnStatement(CAstScope *scope) {
 
   Consume(tReturn, &t);
   CAstExpression *expr = NULL;
-  if (_scanner->Peek().GetType() != tSemicolon) {
+  if (_scanner->Peek().GetType() != tSemicolon &&
+  _scanner->Peek().GetType() != tEnd ){
     expr = expression(scope);
   }
-  Consume(tSemicolon);
 
   return new CAstStatReturn(t, scope, expr);
 }
@@ -660,6 +676,14 @@ CAstExpression *CParser::expression(CAstScope *s) {
       relop = opEqual;
     else if (t.GetValue() == "#")
       relop = opNotEqual;
+    else if (t.GetValue() == "<")
+      relop = opLessThan;
+    else if (t.GetValue() == ">")
+      relop = opBiggerThan;
+    else if (t.GetValue() == "<=")
+      relop = opLessEqual;
+    else if (t.GetValue() == ">=")
+      relop = opBiggerEqual;
     else
       SetError(t, "invalid relation.");
 
@@ -758,10 +782,10 @@ CAstExpression *CParser::factor(CAstScope *s) {
       n = boolConst();
       break;
     case tCharConst:
-      n = charCon();
+      n = charConst();
       break;
     case tStringConst:
-      n = stringCon(s);
+      n = stringConst(s);
       break;
     // factor ::= "(" expression ")"
     case tLParens:
@@ -770,8 +794,9 @@ CAstExpression *CParser::factor(CAstScope *s) {
       Consume(tRParens);
       break;
     case tNot:
-      Consume(tNot);
+      Consume(tNot, &t);
       n = factor(s);
+      n = new CAstUnaryOp(t, opNot, n);
       break;
     case tIdent: {
       // qualident | subroutineCall
@@ -834,7 +859,7 @@ CAstConstant *CParser::boolConst(void) {
   return new CAstConstant(t, CTypeManager::Get()->GetBool(),
                           t.GetValue() == "true" ? 1 : 0);
 }
-CAstStringConstant *CParser::stringCon(CAstScope *scope) {
+CAstStringConstant *CParser::stringConst(CAstScope *scope) {
   //
   // string ::= '"' { character } '"'.
   //
@@ -847,7 +872,7 @@ CAstStringConstant *CParser::stringCon(CAstScope *scope) {
   // }
   return new CAstStringConstant(t, t.GetValue(), scope);
 }
-CAstConstant *CParser::charCon(void) {
+CAstConstant *CParser::charConst(void) {
   //
   // char ::= "'" character "'".
   //
@@ -855,7 +880,25 @@ CAstConstant *CParser::charCon(void) {
 
   Consume(tCharConst, &t);
 
-  return new CAstConstant(t, CTypeManager::Get()->GetChar(), t.GetValue()[0]);
+  if(t.GetValue().size() == 1)
+    return new CAstConstant(t, CTypeManager::Get()->GetChar(), t.GetValue()[0]);
+  else{
+    string s = t.GetValue();
+    if(s[1] == 'n')
+      return new CAstConstant(t, CTypeManager::Get()->GetChar(), '\n');
+    else if(s[1] == 't')
+      return new CAstConstant(t, CTypeManager::Get()->GetChar(), '\t');
+    else if(s[1] == '0')
+      return new CAstConstant(t, CTypeManager::Get()->GetChar(), '\0');
+    else if(s[1] == '\\')
+      return new CAstConstant(t, CTypeManager::Get()->GetChar(), '\\');
+    else if(s[1] == '\'')
+      return new CAstConstant(t, CTypeManager::Get()->GetChar(), '\'');
+    else if(s[1] == '\"')
+      return new CAstConstant(t, CTypeManager::Get()->GetChar(), '\"');
+    else
+      SetError(t, "invalid character");
+  }
 }
 CAstConstant *CParser::number(void) {
   //

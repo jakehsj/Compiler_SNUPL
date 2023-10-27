@@ -14,3 +14,4 @@ begin
   c := '\n';
   c := '\x41'
 end test07.
+

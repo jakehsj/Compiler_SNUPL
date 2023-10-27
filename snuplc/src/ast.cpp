@@ -188,6 +188,7 @@ ostream& CAstScope::print(ostream &out, int indent) const
   out << ind << "  symbol table:" << endl;
   _symtab->print(out, indent+4);
   out << ind << "  statement list:" << endl;
+  
   CAstStatement *s = GetStatementSequence();
   if (s != NULL) {
     do {
