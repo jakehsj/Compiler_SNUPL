@@ -103,14 +103,19 @@ class CParser {
   ///        global variables
   void InitSymbolTable(CSymtab *s);
 
-  /// @name methods for recursive-descent parsing
+  /// @defgroup recursive-parsing
+  /// @name  recursive descent parsing methods
+  /// @note consist with methods: declaration, statement and expression
   /// @{
 
   /// @brief parse a module
   /// @retval CAstModule module node
   CAstModule *module(void);
+  ///@}
 
-  /// declaration parsing
+  /// @addtogroup recursive-parsing
+  /// @name declaration parsing
+  ///@{
 
   /// @brief parse a function declaration
   /// @param scope scope whose symbol table is used to store the function
@@ -131,8 +136,11 @@ class CParser {
   /// @param idents vector which will store the varaible names after parsing
   /// @retval CType type which variables are declared with
   CType *varDecl(vector<string> &idents);
+  ///@}
 
-  /// statement parsing(subclass of CAstStatement)
+  /// @addtogroup recursive-parsing
+  /// @name  statement parsing(subclass of CAstStatement)
+  ///@{
 
   /// @brief parse a sequence statement
   /// @param s scope in which the sequence statement is parsed
@@ -165,8 +173,11 @@ class CParser {
   /// @param scope scope in which the statement is parsed
   /// @retval CAstStatCall subroutine call node
   CAstStatCall *subroutineCall(CAstScope *scope);
+  /// @}
 
-  /// expression parsing(subclass of CAstExpression)
+  /// @addtogroup recursive-parsing
+  /// @name expression parsing(subclass of CAstExpression)
+  ///@{
 
   /// @brief parse a statement
   /// @note when "a := foo(1);" parse only rvalue "foo(1)"
@@ -195,10 +206,6 @@ class CParser {
   /// @return CAstExpression factor node
   CAstExpression *factor(CAstScope *s);
 
-  /// @brief parse a unary operator
-  /// @retval CAstUnaryOp operation node
-  CAstUnaryOp *unaryOp(CAstScope *scope);
-
   // /// @brief parse a letter
   // /// @param s scope in which the letter is parsed
   // /// @retval CAstDesignator designator node
@@ -220,10 +227,15 @@ class CParser {
   /// @brief parse a character constant
   /// @retval CAstConstant constant node
   CAstConstant *charConst(void);
-
   /// @brief parse a ident
   /// @param scope scope in which the ident is parsed
   CAstDesignator *qualident(CAstScope *scope);
+
+  /// @brief parse a unary operator
+  /// @retval CAstUnaryOp operation node
+  CAstUnaryOp *unaryOp(CAstScope *scope);
+  /// @}
+
   /// @}
 
   CScanner *_scanner;   ///< CScanner instance
