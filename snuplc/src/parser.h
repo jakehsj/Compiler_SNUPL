@@ -106,42 +106,123 @@ class CParser {
   /// @name methods for recursive-descent parsing
   /// @{
 
+  /// @brief parse a module
+  /// @retval CAstModule module node
   CAstModule *module(void);
 
-  CAstStatement *statSequence(CAstScope *s);
+  /// declaration parsing
 
-  CAstStatAssign *assignment(CAstScope *s);
-
-  CAstExpression *expression(CAstScope *s);
-  CAstExpression *simpleexpr(CAstScope *s);
-  CAstExpression *term(CAstScope *s);
-  CAstExpression *factor(CAstScope *s);
-
-  CAstDesignator *letter(CAstScope *s);
-  CAstConstant *number(void);
-
-  void constDeclaration(CAstScope *scope);
+  /// @brief parse a function declaration
+  /// @param scope scope whose symbol table is used to store the function
+  /// @retval CAstScope scope node
   void procedureDecl(CAstScope *scope);
+
+  /// @brief parse a const declaration
+  /// @param scope scope whose symbol table is used to store the const
+  /// @retval CAstScope scope node
+  void constDeclaration(CAstScope *scope);
+
+  /// @brief parse var declaration
+  /// @param scope scope whose symbol table is used to store the type
+  /// @retval CAstScope scope node
   void varDeclaration(CAstScope *scope);
+
+  /// @brief parse a type declaration
+  /// @param idents vector which will store the varaible names after parsing
+  /// @retval CType type which variables are declared with
   CType *varDecl(vector<string> &idents);
 
+  /// statement parsing(subclass of CAstStatement)
+
+  /// @brief parse a sequence statement
+  /// @param s scope in which the sequence statement is parsed
+  /// @retval CAstStatement sequence statement node
+  CAstStatement *CParser::statSequence(CAstScope *s);
+
+  /// @brief parse a while statement
+  /// @param scope scope in which the while statement is parsed
+  /// @retval CAstStatWhile while statement node
   CAstStatWhile *whileStatement(CAstScope *scope);
+
+  /// @brief parse a if statement
+  /// @param scope scope in which the if statement is parsed
+  /// @retval CAstStatIf if statement node
   CAstStatIf *ifStatement(CAstScope *scope);
+
+  /// @brief parse a return statement
+  /// @param scope scope in which the statement is parsed
+  /// @retval CAstStatReturn return statement node
   CAstStatReturn *returnStatement(CAstScope *scope);
+
+  /// @brief parse a assignment statement
+  /// @param s scope in which the assignment statement is parsed
+  /// @retval CAstStatAssign assignment statement node
+  CAstStatAssign *CParser::assignment(CAstScope *s);
+
+  /// @brief parse a subroutine call statement
+  /// @note like "foo(1, 2, 3);" parse whole statement
+  /// compare with @ref functionCall
+  /// @param scope scope in which the statement is parsed
+  /// @retval CAstStatCall subroutine call node
   CAstStatCall *subroutineCall(CAstScope *scope);
+
+  /// expression parsing(subclass of CAstExpression)
+
+  /// @brief parse a statement
+  /// @note when "a := foo(1);" parse only rvalue "foo(1)"
+  /// compare with @ref subroutineCall
+  /// @param scope scope in which the statement is parsed
+  /// @retval CAstFunctionCall function call node
   CAstFunctionCall *functionCall(CAstScope *scope);
 
+  /// @brief parse a expression
+  /// @param s scope in which the expression is parsed
+  /// @retval CAstExpression expression node
+  CAstExpression *expression(CAstScope *s);
+
+  /// @brief parse a simple expression
+  /// @param s scope in which the simple expression is parsed
+  /// @retval CAstExpression simple expression node
+  CAstExpression *simpleexpr(CAstScope *s);
+
+  /// @brief parse a term
+  /// @param s scope in which the term is parsed
+  /// @retval CAstExpression term node
+  CAstExpression *term(CAstScope *s);
+
+  /// @brief  parse a factor
+  /// @param s scope in which the factor is parsed
+  /// @return CAstExpression factor node
+  CAstExpression *factor(CAstScope *s);
+
+  /// @brief parse a unary operator
+  /// @retval CAstUnaryOp operation node
   CAstUnaryOp *unaryOp(CAstScope *scope);
 
-  // CAstSpecialOp *specialOp(CAstScope *scope);
-  // CAstOperand *operand(CAstScope *scope);
-  // CAstArrayDesignator *arrayCon(CAstScope *scope);
-  // CAstStringConstant *stringCon(CAstScope *scope);
+  // /// @brief parse a letter
+  // /// @param s scope in which the letter is parsed
+  // /// @retval CAstDesignator designator node
+  // CAstDesignator *letter(CAstScope *s);
 
+  /// @brief parse a number constant
+  /// @retval CAstConstant constant node
+  CAstConstant *number(void);
+
+  /// @brief parse a boolean constant
+  /// @retval CAstConstant constant node
   CAstConstant *boolConst(void);
+
+  /// @brief parse a string constant
+  /// @param scope scope in which the string is parsed
+  /// @retval CAstConstant constant node
   CAstStringConstant *stringConst(CAstScope *scope);
+
+  /// @brief parse a character constant
+  /// @retval CAstConstant constant node
   CAstConstant *charConst(void);
 
+  /// @brief parse a ident
+  /// @param scope scope in which the ident is parsed
   CAstDesignator *qualident(CAstScope *scope);
   /// @}
 

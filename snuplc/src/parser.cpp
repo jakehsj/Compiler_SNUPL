@@ -51,21 +51,64 @@
 using namespace std;
 
 //--------------------------------------------------------------------------------------------------
-// EBNF of SnuPL/-1
-//   module        =  statSequence "."
-//   digit         =  "0".."9".
-//   letter        =  "a".."z".
-//   factOp        =  "*" | "/".
-//   termOp        =  "+" | "-".
-//   relOp         =  "=" | "#".
-//   factor        =  digit | "(" expression ")".
-//   term          =  factor { factOp factor }.
-//   simpleexpr    =  term { termOp term }.
-//   expression    =  simpleexpr [ relOp simpleexpr ].
-//   assignment    =  letter ":=" expression.
-//   statement     =  assignment.
-//   statSequence  =  [ statement { ";" statement } ].
-//   whitespace    =  { " " | \n }+.
+// EBNF of SnuPL/-2
+// module            = "module" ident ";"
+//                     { constDeclaration | varDeclaration | subroutineDecl }
+//                     [ "begin" statSequence ] "end" ident ".".
+
+// letter            = "A".."Z" | "a".."z" | "_".
+// digit             = "0".."9".
+// hexdigit          = digit | "A".."F" | "a".."f".
+// character         = LATIN1_char | "\n" | "\t" | "\"" | "\'" | "\\" |
+// hexencoded. hexedcoded        = "\x" hexdigit hexdigit. char              =
+// "'" character  "'" | "'" "\0" "'". string            = '"' { character } '"'.
+
+// ident             = letter { letter | digit }.
+// number            = digit { digit } [ "L" ].
+// boolean           = "true" | "false".
+// type              = basetype | type "[" [ simpleexpr ] "]".
+// basetype          = "boolean" | "char" | "integer" | "longint".
+
+// qualident         = ident { "[" simpleexpr "]" }.
+// factOp            = "*" | "/" | "&&".
+// termOp            = "+" | "-" | "||".
+// relOp             = "=" | "#" | "<" | "<=" | ">" | ">=".
+
+// factor            = qualident | number | boolean | char | string |
+//                    "(" expression ")" | subroutineCall | "!" factor.
+// term              = factor { factOp factor }.
+// simpleexpr        = ["+"|"-"] term { termOp term }.
+// expression        = simpleexpr [ relOp simplexpr ].
+
+// assignment        = qualident ":=" expression.
+// subroutineCall    = ident "(" [ expression {"," expression} ] ")".
+// ifStatement       = "if" "(" expression ")" "then" statSequence
+//                     [ "else" statSequence ] "end".
+// whileStatement    = "while" "(" expression ")" "do" statSequence "end".
+// returnStatement   = "return" [ expression ].
+
+// statement         = assignment | subroutineCall | ifStatement
+//                     | whileStatement | returnStatement.
+// statSequence      = [ statement { ";" statement } ].
+
+// constDeclaration  = [ "const" constDeclSequence ].
+// constDeclSequence = constDecl ";" { constDecl ";" }
+// constDecl         = varDecl "=" expression.
+
+// varDeclaration    = [ "var" varDeclSequence ";" ].
+// varDeclSequence   = varDecl { ";" varDecl }.
+// varDecl           = ident { "," ident } ":" type.
+
+// subroutineDecl    = (procedureDecl | functionDecl)
+//                     ( "extern" | subroutineBody ident ) ";".
+// procedureDecl     = "procedure" ident [ formalParam ] ";".
+// functionDecl      = "function" ident [ formalParam ] ":" type ";".
+// formalParam       = "(" [ varDeclSequence ] ")".
+// subroutineBody    = constDeclaration varDeclaration
+//                     "begin" statSequence "end".
+
+// comment           = "//" {[^\n]} \n.
+// whitespace        = { " " | \t | \n }.
 
 //--------------------------------------------------------------------------------------------------
 // CParser
@@ -160,7 +203,9 @@ void CParser::InitSymbolTable(CSymtab *st) {
   st->AddSymbol(f);
 
   f = new CSymProc("WriteStr", tm->GetNull(), true);
-  f->AddParam(new CSymParam(0, "string", tm->GetPointer(tm->GetArray(CArrayType::OPEN,tm->GetChar()))));
+  f->AddParam(new CSymParam(
+      0, "string",
+      tm->GetPointer(tm->GetArray(CArrayType::OPEN, tm->GetChar()))));
   st->AddSymbol(f);
 
   f = new CSymProc("WriteLn", tm->GetNull(), true);
@@ -277,7 +322,7 @@ void CParser::varDeclaration(CAstScope *scope) {
       CSymbol *s = scope->CreateVar(i, ty);
       scope->GetSymbolTable()->AddSymbol(s);
     }
-    Consume(tSemicolon);  
+    Consume(tSemicolon);
   }
   // if (_scanner->Peek().GetType() == tSemicolon) {
   //   Consume(tSemicolon);
@@ -410,8 +455,8 @@ void CParser::procedureDecl(CAstScope *scope) {
           CTypeManager::Get()->GetArray(constExpr->GetValue(), returnType);
       returnType = const_cast<CType *>(cty);
     }
-  }else {
-    const CType *cty =  (CTypeManager::Get()->GetNull());
+  } else {
+    const CType *cty = (CTypeManager::Get()->GetNull());
     returnType = const_cast<CType *>(cty);
   }
   Consume(tSemicolon);
@@ -427,21 +472,22 @@ void CParser::procedureDecl(CAstScope *scope) {
   // add parameters to symbol table
   for (auto &varDecl : varDeclSequence) {
     for (auto &ident : varDecl.first) {
-      CSymParam *csymParam =  new CSymParam(proc->GetNParams(), ident, varDecl.second);
+      CSymParam *csymParam =
+          new CSymParam(proc->GetNParams(), ident, varDecl.second);
       proc->AddParam(csymParam);
       astProc->GetSymbolTable()->AddSymbol(csymParam);
     }
   }
-        
+
   if (!isExtern) {
     if (_scanner->Peek().GetType() == tConstDecl) {
       constDeclaration(astProc);
     }
 
-    if(_scanner->Peek().GetType() == tVarDecl){
+    if (_scanner->Peek().GetType() == tVarDecl) {
       varDeclaration(astProc);
     }
-    
+
     Consume(tBegin);
     CAstStatement *statseq = statSequence(astProc);
     astProc->SetStatementSequence(statseq);
@@ -506,8 +552,8 @@ CAstStatement *CParser::statSequence(CAstScope *s) {
           CToken t1 = _scanner->Peek();
           ESymbolType stype;
           stype = s->GetSymbolTable()
-                        ->FindSymbol(t1.GetValue(), sGlobal)
-                        ->GetSymbolType();
+                      ->FindSymbol(t1.GetValue(), sGlobal)
+                      ->GetSymbolType();
           if (stype == stProcedure)
             st = subroutineCall(s);
           else
@@ -531,10 +577,9 @@ CAstStatement *CParser::statSequence(CAstScope *s) {
 
       // if (_scanner->Peek().GetType() == tEnd) break;
       // if (_scanner->Peek().GetType() == tElse) break;
-      if(_scanner->Peek().GetType() == tSemicolon){
+      if (_scanner->Peek().GetType() == tSemicolon) {
         Consume(tSemicolon);
-      }
-      else {
+      } else {
         break;
       }
     } while (!_abort);
@@ -600,7 +645,7 @@ CAstStatReturn *CParser::returnStatement(CAstScope *scope) {
   Consume(tReturn, &t);
   CAstExpression *expr = NULL;
   if (_scanner->Peek().GetType() != tSemicolon &&
-  _scanner->Peek().GetType() != tEnd ){
+      _scanner->Peek().GetType() != tEnd) {
     expr = expression(scope);
   }
 
@@ -867,19 +912,19 @@ CAstConstant *CParser::charConst(void) {
 
   Consume(tCharConst, &t);
 
-  if(t.GetValue().size() == 1)
+  if (t.GetValue().size() == 1)
     return new CAstConstant(t, CTypeManager::Get()->GetChar(), t.GetValue()[0]);
-  else{
+  else {
     string s = t.GetValue();
-    if(s[1] == 'n')
+    if (s[1] == 'n')
       return new CAstConstant(t, CTypeManager::Get()->GetChar(), '\n');
-    else if(s[1] == 't')
+    else if (s[1] == 't')
       return new CAstConstant(t, CTypeManager::Get()->GetChar(), '\t');
-    else if(s[1] == '0')
+    else if (s[1] == '0')
       return new CAstConstant(t, CTypeManager::Get()->GetChar(), '\0');
-    else if(s[1] == '\\')
+    else if (s[1] == '\\')
       return new CAstConstant(t, CTypeManager::Get()->GetChar(), '\\');
-    else if(s[1] == '\'')
+    else if (s[1] == '\'')
       return new CAstConstant(t, CTypeManager::Get()->GetChar(), '\'');
     else
       SetError(t, "invalid character");

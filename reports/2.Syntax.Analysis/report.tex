@@ -18,10 +18,12 @@
 \usepackage{listings}
 \usepackage{xcolor}
 \usepackage{caption}
-
+\usepackage{enumitem}
+% \usepackage{showframe}
 \hbadness=99999
 \ebproofset{left label template=\textsc{[\inserttext]}}
 
+% Algorithm
 \newlength\myindent
 \setlength\myindent{2em}
 \newcommand\bindent{%
@@ -33,8 +35,20 @@
 
 \renewcommand{\algorithmicrequire}{\textbf{Input:}}
 \renewcommand{\algorithmicensure}{\textbf{Output:}}
-    
 
+% Indent
+\newlist{MyIndentedList}{itemize}{4}
+\setlist[MyIndentedList,1]{%
+    label={},
+    noitemsep,
+    leftmargin=0pt,
+    }
+\setlist[MyIndentedList]{%
+    label={},
+    noitemsep,
+    }
+
+% Code Block style
 \definecolor{codegreen}{rgb}{0,0.6,0}
 \definecolor{codegray}{rgb}{0.5,0.5,0.5}
 \definecolor{codepurple}{rgb}{0.58,0,0.82}
@@ -58,102 +72,291 @@
     showtabs=false,                  
     tabsize=2
 }
-
 \lstset{style=mystyle}
 
+% Start of document
 \title{Syantx Analysis}
 
 \author{Oh Gyuhyeok (2020-10485)}
 \author{Hwang SeungJun (2020-15313)}
 \affil{SNUCSE}
-\date{\today}
+\date{}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-    abstract
+    This report presents the design and implementation of a compiler for the SNUPL/2 language, a powerful type-based procedural language designed for educational purposes.
+    The compiler consists of several key components, including a scanner, parser, optimizer, and code generator.
+    In this report, we primarily focus on the parser, which is responsible for translating high-level source code into an abstract syntax tree (AST).
+    The main objectives of this phase of the project were to design and implement a top-down parser for the SNUPL/2 language, generate an AST in both textual and graphical forms, perform syntactical checks, and enforce constraints related to the language's syntax.
+    The parser phase involves parsing modules, declarations, subroutines, statements, and expressions.
+    It handles various types of declarations, including variables, constants, procedures, and functions. Special attention is given to the parsing of formal parameters for subroutines, ensuring that the symbol table is appropriately populated.
+    Semantic correctness and error checking are integral parts of the parser's functionality.
+    The report provides a detailed overview of the parser's implementation, including the structure and logic of the parsing process.
+    It also highlights the challenges faced and solutions devised during the implementation.
+    The system's robustness and correctness are validated through a range of test cases, including both provided and custom scenarios.
+    This work represents a crucial step in the development of a SNUPL/2 compiler, laying the foundation for subsequent phases, including optimization and code generation.
 \end{abstract}
 
 \section{Introduction}
+Compiler is a complex program that is one of computer science as an enemy effort.
+It is a program that translates a program written in a high-level language into a program written in a low-level language.
+For understanding of this compiler, you can learn this by implementing the compiler of SNUPL/2\cite{Egger_git}, a powerful type-based procedural language designed for educational purposes.\\
 
-In the second phase of our term project, our primary focus was on implementing a top-down parser for the SnuPL/2 language. 
-This report provides an overview of the work completed during this phase, including the design, implementation, and testing of the parser.
-cite \cite[cite1]{Textbook_Compiler}
-cite \cite[cite2]{Egger_Lecture_Note}
-cite \cite[cite3]{Egger_git}
+The compiler consists of several components: scanner, parser, optimizer and code generator\cite{Textbook_Compiler}.
+In the first phase of our term project, we implemented a scanner for the SnuPl/2 language.
+In the second phase of our term project, our primary focus is on implementing a predictive top-down parser\cite{Egger_Lecture_Note} for the SnuPl/2 language which is well suited for this parsing method.
+We focus on the syantax, which is the structure of the program, and we build an abstract syntax tree which consumes tokens received from the scanner we implemented in Phase 1.
+Next phase, we will focus on semantic analysis, which is the meaning of the program, and we will build a symbol table and perform type checking.\\
+
+We build an abstract syntax tree which consumes tokens received from the scanner we implemented in Phase 1.
+This report provides an overview of the work completed during this phase, including the design, implementation and testing of the parser.
 
 
-\section{Progress Overview}
+\subsection{Progress Overview}
 The main objectives of this phase were as follows:\\
-1. Design and implement a top-down parser for the SnuPL/2 language. \\
+1. Design and implement a top-down parser for the SnuPL/2 language based on Appendix.\ref*{Appendix:Syntax}. \\
 2. Generate an abstract syntax tree (AST) in both textual and graphical forms. \\
 3. Perform syntactical checks, such as ensuring symbols are defined before use. \\
 4. Enforce constraints related to the SnuPL/2 syntax, such as matching declaration and end identifiers. \\
 
-\section{Design}
-\subsection{Grammar}
-EBNF notation is used to describe the grammar of the SnuPL/2 language.
-% TODO: translate to form fitting to latex.
-% module            = "module" ident ";" 
-% { constDeclaration | varDeclaration | subroutineDecl }
-% [ "begin" statSequence ] "end" ident ".".
-
-% letter            = "A".."Z" | "a".."z" | "_".
-% digit             = "0".."9".
-% hexdigit          = digit | "A".."F" | "a".."f".
-% character         = LATIN1_char | "\n" | "\t" | "\"" | "\'" | "\\" | hexencoded.
-% hexedcoded        = "\x" hexdigit hexdigit.
-% char              = "'" character  "'" | "'" "\0" "'".
-% string            = '"' { character } '"'.
-
-% ident             = letter { letter | digit }.
-% number            = digit { digit } [ "L" ].
-% boolean           = "true" | "false".
-% type              = basetype | type "[" [ simpleexpr ] "]".
-% basetype          = "boolean" | "char" | "integer" | "longint".
-
-% qualident         = ident { "[" simpleexpr "]" }.
-% factOp            = "*" | "/" | "&&".
-% termOp            = "+" | "-" | "||".
-% relOp             = "=" | "#" | "<" | "<=" | ">" | ">=".
-
-% factor            = qualident | number | boolean | char | string |
-% "(" expression ")" | subroutineCall | "!" factor.
-% term              = factor { factOp factor }.
-% simpleexpr        = ["+"|"-"] term { termOp term }.
-% expression        = simpleexpr [ relOp simplexpr ].
-
-% assignment        = qualident ":=" expression.
-% subroutineCall    = ident "(" [ expression {"," expression} ] ")".
-% ifStatement       = "if" "(" expression ")" "then" statSequence
-% [ "else" statSequence ] "end".
-% whileStatement    = "while" "(" expression ")" "do" statSequence "end".
-% returnStatement   = "return" [ expression ].
-
-% statement         = assignment | subroutineCall | ifStatement
-% | whileStatement | returnStatement.
-% statSequence      = [ statement { ";" statement } ].
-
-% constDeclaration  = [ "const" constDeclSequence ].
-% constDeclSequence = constDecl ";" { constDecl ";" }
-% constDecl         = varDecl "=" expression.
-
+\section{Implementation}
+\begin{MyIndentedList}
+    \item Before briefly explaining the process of parsing, there are few things to notify.
+    \begin{MyIndentedList}
+        \item 1.	All the methods created in Phase 2 is implemented in parser.cpp
+        \item 2. 	When we say "create CAstxxx” it means we create a instance which is node of the Abstract Syntax Tree, and the nodes have slightly different properties depending on its type.
+        \item 3.	Every function mentioned is bolded
+        \item 4. The word “vector” is used as array (C++ dynamic array)
+    \end{MyIndentedList}
+\end{MyIndentedList}
+Parsing step is below and we will explain each step in detail in the following sections.
+\subsection{Parsing module}
+\begin{MyIndentedList}
+    \item We start parsing by parsing the module.
+    \begin{MyIndentedList}
+        \item 1.	Consume “module”, identifier, and semicolon
+        \item 2.	Create scope(CAstModule) and pass its symbol table to function InitSymbolTable, which initializes all the necessary keywords predefined in SnuPl/2
+        \item 3.	Handle declarations with while loop by checking the next token’s type. Depending on it, we handle it by constDeclaration, varDeclaration, procDeclaration functions
+        \item 4.	End the loop if type of the token is not one of the declare tokens, since Follow set of all declarations are always one of declare tokens.
+        \item 5.	 If “begin” appears, consume it and handle the body with statSequence, which returns CAstStatement.
+        \item 6.	Set scope’s statement sequence the return value at step 5 (with predefined method of CAstModule)
+        \item 7.	Consume rest of the necessary tokens and check if the value of identifier consumed matches the one consumed at step 1                
+    \end{MyIndentedList}
+\end{MyIndentedList}
+\subsection{Parsing declaration}
+There are two different type of declartion:variables containing const varaible and subroutine: procedure and function.
+We will explain how we parse each declaration in detail in the following sections.
 % varDeclaration    = [ "var" varDeclSequence ";" ].
 % varDeclSequence   = varDecl { ";" varDecl }.
 % varDecl           = ident { "," ident } ":" type.
 
+\subsubsection{Parsing variable declaration}
+The main challenge we had in parsing variable declaration is that we need to add every variable to the scope’s(node of the AST) symbol table and therefore the type and the name of the variables are needed. 
+We will explain how we parse each declaration in detail in the following sections.
+\begin{MyIndentedList}
+    \item We implemented the method starting at function varDeclaration:
+    \begin{MyIndentedList}
+        \item 1. Consume “var”  
+        \item 2. Handle varDeclSequence by while loop until the next token is not a identifier
+        \item 3. Inside the loop, we declare vector of string which contains names of all the variable declared in varDecl.
+        Then, pass the vector and call varDecl which stores all variable names and get their type from the returned value from varDecl.
+        \item 4. Add all variables to symbol table and consume semicolon.
+        \item 5. Repeat 2 - 4
+    \end{MyIndentedList}
+    \item Before we explain how function varDecl is implemented, we need to explain how we handle type of the variable.
+    We need to know the variable and its type before we can know the symbol table of the variable for function declaration.
+    So we need to save variables and the their type.\\
+    \item Now we briefly explain how function varDecl is implemented:
+    \begin{MyIndentedList}
+        \item 1. Consume all identifiers until colon appears. Add their values to the vector which is passed from varDeclaration
+        \item 2. Handle the type by first consuming basetype
+        \item 3. Then, if it is an array, we consume all brackets and size of each dimension (which is handled by number function)
+        \item 4. After that, we use \texttt{CTypeManager} class methods to return appropriate \texttt{CType} value
+    \end{MyIndentedList}
+    \item Const declaration is also done in similar method except considering the value of the constant.
+    We save the value of the constant with \texttt{CDataInitializer} which initializes the value with the expression.
+    \item  In further phase, we would need to handle simple expression inside the brackets but for current phase we just assume it is a number.  \\
+\end{MyIndentedList}
+
+\subsubsection*{Parsing subroutine declaration}
 % subroutineDecl    = (procedureDecl | functionDecl)
-% ( "extern" | subroutineBody ident ) ";".
+%                     ( "extern" | subroutineBody ident ) ";".
 % procedureDecl     = "procedure" ident [ formalParam ] ";".
 % functionDecl      = "function" ident [ formalParam ] ":" type ";".
 % formalParam       = "(" [ varDeclSequence ] ")".
-% subroutineBody    = constDeclaration varDeclaration
-% "begin" statSequence "end".
 
-% comment           = "//" {[^\n]} \n.
-% whitespace        = { " " | \t | \n }.
+The main challenge we faced in this period is we need to include the parameters of the function/procedure into its symbol table.
+So while parsing formalParam, we store all variables’ name and type in vector. The vector contains pair of vector(of variable names) and corresponding type, 
+i.g. \texttt{vector<pair<vector<string>, CType *>>}
+Then, after some period we can get the return type of the subroutine and make \texttt{CAstProcedure} node and push all variables in the vector into the subroutine’s symbol table. 
+Rest of the step is similar to step 5~7 of module
 
+\begin{MyIndentedList}
+    \item Following steps shows what is done step by step from function procedureDecl:
+    \begin{MyIndentedList}
+        \item 1.	Consume “function” or “procedure” and declare the type of this subroutine
+        \item 2.	Parse formalParam by consuming necessary tokens and while consuming identifiers inside left parens, call varDecl and store all variables’ name in a vector
+        \item 3.	Make pair of variables’ name vector and variables’ type and push it into another vector which is mentioned at 2-3 explanation
+        \item 4.	If subroutine type is function, get appropriate CType value 
+        \item 5.	Create new node with \texttt{CAstProcedure} for this subroutine scope
+        \item 6.	Add all parameters declared into the scope’s symbol table
+        \item 7.	 If “begin” appears, consume it and handle the body with statSequence, which returns CAstStatement.
+        \item 8.	Set scope’s statement sequence the return value at step 5
+        \item 9.	Consume rest of the necessary tokens                
+    \end{MyIndentedList}
+\end{MyIndentedList}
+
+
+\subsection{Sequence of statements}
+% statSequence      = [ statement { ";" statement } ].
+% statement         = assignment | subroutineCall | ifStatement | whileStatement | returnStatement.
+% assignment        = qualident ":=" expression.
+% subroutineCall    = ident "(" [ expression {"," expression} ] ")".
+% ifStatement       = "if" "(" expression ")" "then" statSequence  [ "else" statSequence ] "end".
+% whileStatement    = "while" "(" expression ")" "do" statSequence "end".
+% returnStatement   = "return" [ expression ].
+
+In statSequence, we handle the body of functions, procedures, and module. We implement statSequence as a loop.
+We keep a ‘head’ that points to the first statement and is returned at the end of the function( it can be NULL if no statement).
+In the loop, we track the end of the linked list using ‘tail’ and attach new statements to that tail.
+\begin{MyIndentedList}
+    \item The implementation of statSequence starts at function statSequence
+    \begin{MyIndentedList}
+        \item 1.	Check if the next token to consume is “end” or “else”. If true, return NULL
+        \item 2.	Handle each statement in while loop; Call ifStatement, whileStatement, returnStatement if next token is “if”, “while”, “return”.
+        If next token is identifier, get the token’s type by searching through symbol table of current scope and it’s ancestors’ scopes by using FindSymbol method with argument sGlobal which calls FindSymbol method from parent symbol table.
+        \item 3.	Depending on the type, call either subroutineCall or assignment 
+        \item 4.	If head pointer is NULL then set head as return value of the function called at 2,3
+        \item 5.	Modify tail pointer to appropriately maintain linked list
+        \item 6.	If next token is semicolon, consume it. Else, break
+        \item 7.	Return head pointer                
+    \end{MyIndentedList}
+\end{MyIndentedList}
+Functions used here is simple and doens’t create any symbol table and quite self-explanatory
+
+\subsection{Expression}
+\begin{MyIndentedList}
+    \item The implmentation of parsing expression starts at function \texttt{expression}.
+    \item expression:
+    \begin{MyIndentedList}
+        \item 1. Call simpleexpr for left.
+        \item 2. If next token is relational operator, consume it and call simpleexpr for right.
+        \item 3. Create appropriate node depending on the operator and return it.
+    \end{MyIndentedList}
+    \item simpleexpr:
+    \begin{MyIndentedList}
+        \item 1. If next token is plus or minus, consume it and call term for left.
+        \item 2. If next token is term operator, consume it and call term for right 
+    \end{MyIndentedList}
+    \item term:
+    \begin{MyIndentedList}
+        \item 1. Call factor for left.
+        \item 2. If next token is factor operator, consume it and call factor for right.
+        \item 3. Create appropriate node depending on the operator and return it.
+    \end{MyIndentedList}
+    \item factor:
+    \begin{MyIndentedList}
+        \item 1. If next token is identifier, call qualident.
+        \item 2. If next token is number, call number.
+        \item 3. If next token is boolean, call boolean.
+        \item 4. If next token is character, call character.
+        \item 5. If next token is string, call string.
+        \item 6. If next token is left parenthesis, consume it and call expression. Then consume right parenthesis.
+        \item 7. If next token is exclamation mark, consume it and call factor.
+    \end{MyIndentedList}
+    \item unaryOp: For sign of the number
+    \item qualident:
+        \begin{MyIndentedList}
+            \item Here we handle variable including arrays.
+            \item First, we find its symbol by using FindSymbol method.
+            \item We use that Csymbol pointer to create either CAstArrayDesignator or CAstDesignator depending on rather it contains brackets.
+            \item It returns the created instance. 
+        \end{MyIndentedList}
+    \item charConst:
+    \begin{MyIndentedList}
+        \item We handle character values that it matches phase 1’s translation. 
+        \item This function is called when handling with character value assignment. When creating CAstConstant, we just set its value as token value’s first index character except for few cases. 
+        Since the scanner from Phase 1 output value for ‘\textbackslash n’, ‘\textbackslash t’, ‘\textbackslash\textbackslash’, ‘\textbackslash 0’, ‘\textbackslash ’’, ‘\textbackslash ”’ is
+        “\textbackslash\textbackslash n”, “\textbackslash\textbackslash t”, “\textbackslash\textbackslash\textbackslash\textbackslash”, “\textbackslash\textbackslash 0”, “\textbackslash\textbackslash ’”, “\textbackslash\textbackslash ””
+    \end{MyIndentedList}
+    \item other consts:
+    \begin{MyIndentedList}
+        \item We handle other constants such as integer, boolean, string.
+        \item We just create \texttt{CAstConstant} with appropriate value and return it.
+        \item For string, we need to save the value of the string to the symbol table. So we use diffirent class: \texttt{CAstStringConstant}.
+    \end{MyIndentedList}
+\end{MyIndentedList}
+
+% \subsection{Algorithm}
+% \begin{algorithm}[H]
+%     \begin{algorithmic}
+%         \STATE\caption{Description of the algorithm}
+%         \REQUIRE\(\text{input}\)
+%         \ENSURE \(\text{output}\)
+%         \STATE\(AAA\)\\
+%     \end{algorithmic}
+% \end{algorithm}
+
+\section{Result}
+We utilized a provided test program that printed the AST to validate our parser's functionality.
+The test program allowed us to examine the generated AST for different test cases.
+In addition to the provided test cases, we created custom test cases to cover more complex and special scenarios, ensuring the robustness of our parser.
+
+\bibliographystyle{plain}
+\bibliography{report}
+
+\appendix
+\addcontentsline{toc}{section}{Appendices}
+\section{Appendix}
+\subsection{Grammer}
+\label{Appendix:Syntax}
+EBNF notation is used to describe the grammar of the SnuPL/2 language.
+{\allowdisplaybreaks
+\begin{align*}
+    &\text{module} &&= \text{``module"} \; \text{ident} \; ``;" \; \{ \text{constDeclaration} \; | \; \text{varDeclaration} \; | \; \text{subroutineDecl} \} \\
+    &&&[ \; \text{``begin"} \; \text{statSequence} \; ] \; \text{``end"} \; \text{ident} \; ``." \\ \\
+    &\text{letter} &&= \text{``A"..``Z"} \; | \; \text{``a"..``z"} \; | \; \text{``\_"} \\
+    &\text{digit} &&= \text{``0"..``9"} \\
+    &\text{hexdigit} &&= \text{digit} \; | \; \text{``A"..``F"} \; | \; \text{``a"..``f"} \\
+    &\text{character} &&= \text{LATIN1\_char} \; | \; \text{``\textbackslash n"} \; | \; \text{``\textbackslash t"} \; 
+    | \; \text{``\textbackslash ""} \; | \; \text{``\textbackslash '"} \; | \; \text{``\textbackslash\textbackslash"} \; | \; \text{hexencoded} \\
+    &\text{string} &&= \text{`"'} \; \{ \text{character} \} \; \text{`"'} \\ \\
+    &\text{ident} &&= \text{letter} \; \{ \text{letter} \; | \; \text{digit} \} \\
+    &\text{number} &&= \text{digit} \; \{ \text{digit} \} \; [ \; \text{``L"} \; ] \\
+    &\text{boolean} &&= \text{``true"} \; | \; \text{``false"} \\
+    &\text{type} &&= \text{basetype} \; | \; \text{type} \; ``[" \; [ \; \text{simpleexpr} \; ] \; ``]" \\
+    &\text{basetype} &&= \text{``boolean"} \; | \; \text{ ``char"} \; | \; \text{``integer"} \; | \; \text{``longint"} \\ \\
+    &\text{qualident} &&= \text{ident} \; \{ ``[" \; \text{simpleexpr} \; ``]" \} \\
+    &\text{factOp} &&= ``*" \; | \; ``/" \; | \; ``\&\&" \\
+    &\text{termOp} &&= ``+" \; | \; ``-" \; | \; ``||" \\
+    &\text{relOp} &&= ``=" \; | \; ``\#" \; | \; ``<" \; | \; ``<=" \; | \; ``>" \; | \; ``>=" \\ \\
+    &\text{factor} &&= \text{qualident} \; | \; \text{number} \; | \; \text{boolean} \; | \; \text{char} \; | \; \text{string} \; | \; ``(" \; \text{expression} \; ``)" \; | \; \text{subroutineCall} \; | \; ``!" \; \text{factor} \\
+    &\text{term} &&= \text{factor} \; \{ \text{factOp} \; \text{factor} \} \\
+    &\text{simpleexpr} &&= [ ``+" \; | \; ``-" ] \; \text{term} \; \{ \text{termOp} \; \text{term} \} \\
+    &\text{expression} &&= \text{simpleexpr} \; [ \text{relOp} \; \text{simpleexpr} ] \\ \\
+    &\text{assignment} &&= \text{qualident} \; ``:=" \; \text{expression} \\
+    &\text{subroutineCall} &&= \text{ident} \; ``(" \; [ \text{expression} \; \{ ``," \; \text{expression} \} \; ] \\
+    &\text{ifStatement} &&= \text{``if"} \; ``(" \; \text{expression} \; ``)" \; \text{``then"} \; \text{statSequence} \; [\text{``else"} \; \text{statSequence}] \; \text{``end"} \\
+    &\text{whileStatement} &&= \text{``while"} \; ``(" \; \text{expression} \; ``)" \; \text{``do"} \; \text{statSequence} \; \text{``end"} \\
+    &\text{returnStatement} &&= \text{``return"} \; [ \; \text{expression} \; ] \\ \\
+    &\text{statement} &&= \text{assignment} \; | \; \text{subroutineCall} \; | \; \text{ifStatement} \; | \; \text{whileStatement} \; | \; \text{returnStatement} \\ 
+    &\text{statSequence} &&= [ \text{statement} \; \{ ``;" \; \text{statement} \; \} ] \\ \\
+    &\text{constDeclaration} &&= [ \; \text{``const"} \; \text{constDeclSequence} \; ] \\
+    &\text{constDeclSequence} &&= \text{constDecl} \; ``;" \; \{ \text{constDecl} \; ``;" \} \\
+    &\text{constDecl} &&= \text{varDecl} \; ``=" \; \text{expression} \\ \\
+    &\text{varDeclaration} &&= [ \; \text{``var"} \; \text{varDeclSequence} \; ``;" \; ] \\
+    &\text{varDeclSequence} &&= \text{varDecl} \; \{ ``;" \; \text{varDecl} \; \} \\ \\
+    &\text{subroutineDecl} &&= ( \text{procedureDecl} \; | \; \text{functionDecl} ) \; ( \text{``extern"} \; | \; \text{subroutineBody} \; \text{ident} \; ) \; ``;" \\
+    &\text{procedureDecl} &&= \text{``procedure"} \; \text{ident} \; [ \; \text{formalParam} \; ] \; ``;" \\
+    &\text{functionDecl} &&= \text{``function"} \; \text{ident} \; [ \; \text{formalParam} \; ] \; ``:" \; \text{type} \; ``;" \\
+    &\text{formalParam} &&= ``(" \; [ \; \text{varDeclSequence} \; ] \; ``)" \\
+    &\text{subroutineBody} &&= \text{constDeclaration} \; \text{varDeclaration} \; \text{``begin"} \; \text{statSequence} \; \text{``end"} \\ \\
+    &\text{comment} &&= \text{``//"} \; \{ \text{[} \text{\textasciicircum \textbackslash n]} \text{]} \; \text{\textbackslash n} \\
+    &\text{whitespace} &&= \{ \text{`` "} \; | \; \text{\textbackslash t} \; | \; \text{\textbackslash n} \} \\
+\end{align*}    
+}
 \subsection{Method}
 We implemented additional method to implement parser.
 List of method is below.
@@ -172,7 +375,6 @@ List of method is below.
     \item \texttt{parseIfStatement} : parse if statement
     \item \texttt{parseWhileStatement} : parse while statement
     \item \texttt{parseReturnStatement} : parse return statement
-    \item \texttt{parseExpression} : parse expression
     \item \texttt{parseSimpleExpr} : parse simple expression
     \item \texttt{parseTerm} : parse term
     \item \texttt{parseFactor} : parse factor
@@ -189,61 +391,10 @@ List of method is below.
     \item \texttt{parseFactOp} : parse factor operator
     \item \texttt{constChar} : parse constant char
 \end{itemize}
-\subsection{Algorithm}
-\begin{algorithm}[H]
-    \begin{algorithmic}
-        \STATE\caption{Description of the algorithm}
-        \REQUIRE\(\text{input}\)
-        \ENSURE \(\text{output}\)
-        \STATE\(AAA\)\\
-    \end{algorithmic}
-\end{algorithm}
-
-\section{Result}
-We utilized a provided test program that printed the AST to validate our parser's functionality.
-The test program allowed us to examine the generated AST for different test cases.
-In addition to the provided test cases, we created custom test cases to cover more complex and special scenarios, ensuring the robustness of our parser.
-
-\bibliographystyle{plain}
-\bibliography{report}
-
-\newpage
-
-\appendix
-\addcontentsline{toc}{section}{Appendices}
-\section{Appendix}
 \subsection{Additional Test Cases}
 \textbf{Input:}
-\begin{lstlisting}[language=Python, caption={[short]caption text}]
-    import numpy as np
-        
-    def incmatrix(genl1,genl2):
-        m = len(genl1)
-        n = len(genl2)
-        M = None #to become the incidence matrix
-        VT = np.zeros((n*m,1), int)  #dummy variable
-        
-        #compute the bitwise xor matrix
-        M1 = bitxormatrix(genl1)
-        M2 = np.triu(bitxormatrix(genl2),1) 
-    
-        for i in range(m-1):
-            for j in range(i+1, m):
-                [r,c] = np.where(M2 == M1[i,j])
-                for k in range(len(r)):
-                    VT[(i)*n + r[k]] = 1;
-                    VT[(i)*n + c[k]] = 1;
-                    VT[(j)*n + r[k]] = 1;
-                    VT[(j)*n + c[k]] = 1;
-                    
-                    if M is None:
-                        M = np.copy(VT)
-                    else:
-                        M = np.concatenate((M, VT), 1)
-                    
-                    VT = np.zeros((n*m,1), int)
-        
-        return M
+\begin{lstlisting}[language=Python]
+    # Any additional test case
 \end{lstlisting}
 
 \textbf{Output:}
