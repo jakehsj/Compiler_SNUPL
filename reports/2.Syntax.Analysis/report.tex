@@ -19,6 +19,9 @@
 \usepackage{xcolor}
 \usepackage{caption}
 \usepackage{enumitem}
+
+\usepackage[T1]{fontenc}
+\usepackage{babel}
 % \usepackage{showframe}
 \hbadness=99999
 \ebproofset{left label template=\textsc{[\inserttext]}}
@@ -76,11 +79,10 @@
 
 % Start of document
 \title{Syantx Analysis}
-
-\author{Oh Gyuhyeok (2020-10485)}
-\author{Hwang SeungJun (2020-15313)}
-\affil{SNUCSE}
-\date{}
+\author[1]{Oh Gyuhyeok}
+\author[1]{Hwang SeungJun}
+\affil[1]{Department of Computer Science and Engineering, Seoul National University}
+\date{\today}
 
 \begin{document}
 \maketitle
@@ -116,7 +118,7 @@ This report provides an overview of the work completed during this phase, includ
 
 \subsection{Progress Overview}
 The main objectives of this phase were as follows:\\
-1. Design and implement a top-down parser for the SnuPL/2 language based on Appendix.\ref*{Appendix:Syntax}. \\
+1. Design and implement a top-down parser for the SnuPL/2 language. \\
 2. Generate an abstract syntax tree (AST) in both textual and graphical forms. \\
 3. Perform syntactical checks, such as ensuring symbols are defined before use. \\
 4. Enforce constraints related to the SnuPL/2 syntax, such as matching declaration and end identifiers. \\
@@ -125,24 +127,36 @@ The main objectives of this phase were as follows:\\
 \begin{MyIndentedList}
     \item Before briefly explaining the process of parsing, there are few things to notify.
     \begin{MyIndentedList}
-        \item 1.	All the methods created in Phase 2 is implemented in parser.cpp
-        \item 2. 	When we say "create CAstxxx” it means we create a instance which is node of the Abstract Syntax Tree, and the nodes have slightly different properties depending on its type.
-        \item 3.	Every function mentioned is bolded
+        \item 1. All the methods created in Phase 2 is implemented in parser.cpp
+        \item 2. When we say "create CAstxxx” it means we create a instance which is node of the Abstract Syntax Tree, and the nodes have slightly different properties depending on its type.
+        \item 3. Every function mention is displayed using different fonts, i.g. \texttt{function}.
         \item 4. The word “vector” is used as array (C++ dynamic array)
     \end{MyIndentedList}
 \end{MyIndentedList}
 Parsing step is below and we will explain each step in detail in the following sections.
+\subsection{Predefined functions}
+There are some functions that are predefined in SnuPl/2. We implemented them in \texttt{InitSymbolTable} function.
+\begin{MyIndentedList}
+    \item \texttt{ReadInt} : Read integer from standard input
+    \item \texttt{ReadChar} : Read character from standard input
+    \item \texttt{WriteInt} : Write integer to standard output
+    \item \texttt{WriteChar} : Write character to standard output
+    \item \texttt{WriteStr} : Write string to standard output
+    \item \texttt{WriteLn} : Write new line to standard output
+    \item \texttt{DIM} : Returns the size of the 'dim'-th array dimension of 'array'
+    \item \texttt{DOFS} : Returns the number of bytes from the starting address of the array to the first data element
+\end{MyIndentedList}
 \subsection{Parsing module}
 \begin{MyIndentedList}
     \item We start parsing by parsing the module.
     \begin{MyIndentedList}
-        \item 1.	Consume “module”, identifier, and semicolon
-        \item 2.	Create scope(CAstModule) and pass its symbol table to function InitSymbolTable, which initializes all the necessary keywords predefined in SnuPl/2
-        \item 3.	Handle declarations with while loop by checking the next token’s type. Depending on it, we handle it by constDeclaration, varDeclaration, procDeclaration functions
-        \item 4.	End the loop if type of the token is not one of the declare tokens, since Follow set of all declarations are always one of declare tokens.
-        \item 5.	 If “begin” appears, consume it and handle the body with statSequence, which returns CAstStatement.
-        \item 6.	Set scope’s statement sequence the return value at step 5 (with predefined method of CAstModule)
-        \item 7.	Consume rest of the necessary tokens and check if the value of identifier consumed matches the one consumed at step 1                
+        \item 1. Consume “module”, identifier, and semicolon
+        \item 2. Create scope(\texttt{CAstModule}) and pass its symbol table to function InitSymbolTable, which initializes all the necessary keywords predefined in SnuPl/2
+        \item 3. Handle declarations with while loop by checking the next token’s type. Depending on it, we handle it by \texttt{constDeclaration}, \texttt{varDeclaration}, \texttt{procDeclaration} functions
+        \item 4. End the loop if type of the token is not one of the declare tokens, since Follow set of all declarations are always one of declare tokens.
+        \item 5.  If “begin” appears, consume it and handle the body with statSequence, which returns \texttt{CAstStatement}.
+        \item 6. Set scope’s statement sequence the return value at step 5 (with predefined method of CAstModule)
+        \item 7. Consume rest of the necessary tokens and check if the value of identifier consumed matches the one consumed at step 1                
     \end{MyIndentedList}
 \end{MyIndentedList}
 \subsection{Parsing declaration}
@@ -161,13 +175,14 @@ We will explain how we parse each declaration in detail in the following section
         \item 1. Consume “var”  
         \item 2. Handle varDeclSequence by while loop until the next token is not a identifier
         \item 3. Inside the loop, we declare vector of string which contains names of all the variable declared in varDecl.
-        Then, pass the vector and call varDecl which stores all variable names and get their type from the returned value from varDecl.
+        Then, pass the vector and call \texttt{varDecl} which stores all variable names and get their type from the returned value from \texttt{varDecl}.
         \item 4. Add all variables to symbol table and consume semicolon.
         \item 5. Repeat 2 - 4
     \end{MyIndentedList}
     \item Before we explain how function varDecl is implemented, we need to explain how we handle type of the variable.
     We need to know the variable and its type before we can know the symbol table of the variable for function declaration.
-    So we need to save variables and the their type.\\
+    So we need to save variables and the their type. You can find more information about this in the section \ref*{subsubsection:Parsing subroutine declaration}.
+    \\
     \item Now we briefly explain how function varDecl is implemented:
     \begin{MyIndentedList}
         \item 1. Consume all identifiers until colon appears. Add their values to the vector which is passed from varDeclaration
@@ -181,6 +196,7 @@ We will explain how we parse each declaration in detail in the following section
 \end{MyIndentedList}
 
 \subsubsection*{Parsing subroutine declaration}
+\label{subsubsection:Parsing subroutine declaration}
 % subroutineDecl    = (procedureDecl | functionDecl)
 %                     ( "extern" | subroutineBody ident ) ";".
 % procedureDecl     = "procedure" ident [ formalParam ] ";".
@@ -191,20 +207,20 @@ The main challenge we faced in this period is we need to include the parameters 
 So while parsing formalParam, we store all variables’ name and type in vector. The vector contains pair of vector(of variable names) and corresponding type, 
 i.g. \texttt{vector<pair<vector<string>, CType *>>}
 Then, after some period we can get the return type of the subroutine and make \texttt{CAstProcedure} node and push all variables in the vector into the subroutine’s symbol table. 
-Rest of the step is similar to step 5~7 of module
+Rest of the step is similar to step 5~7 of module.
 
 \begin{MyIndentedList}
     \item Following steps shows what is done step by step from function procedureDecl:
     \begin{MyIndentedList}
-        \item 1.	Consume “function” or “procedure” and declare the type of this subroutine
-        \item 2.	Parse formalParam by consuming necessary tokens and while consuming identifiers inside left parens, call varDecl and store all variables’ name in a vector
-        \item 3.	Make pair of variables’ name vector and variables’ type and push it into another vector which is mentioned at 2-3 explanation
-        \item 4.	If subroutine type is function, get appropriate CType value 
-        \item 5.	Create new node with \texttt{CAstProcedure} for this subroutine scope
-        \item 6.	Add all parameters declared into the scope’s symbol table
-        \item 7.	 If “begin” appears, consume it and handle the body with statSequence, which returns CAstStatement.
-        \item 8.	Set scope’s statement sequence the return value at step 5
-        \item 9.	Consume rest of the necessary tokens                
+        \item 1. Consume “function” or “procedure” and declare the type of this subroutine
+        \item 2. Parse formalParam by consuming necessary tokens and while consuming identifiers inside left parens, call \texttt{varDecl} and store all variables’ name in a vector
+        \item 3. Make pair of variables’ name vector and variables’ type and push it into another vector which is mentioned at 2-3 explanation
+        \item 4. If subroutine type is function, get appropriate CType value 
+        \item 5. Create new node with \texttt{CAstProcedure} for this subroutine scope
+        \item 6. Add all parameters declared into the scope’s symbol table
+        \item 7.  If “begin” appears, consume it and handle the body with \texttt{statSequence}, which returns \texttt{CAstStatement}.
+        \item 8. Set scope’s statement sequence the return value at step 5
+        \item 9. Consume rest of the necessary tokens                
     \end{MyIndentedList}
 \end{MyIndentedList}
 
@@ -224,14 +240,14 @@ In the loop, we track the end of the linked list using ‘tail’ and attach new
 \begin{MyIndentedList}
     \item The implementation of statSequence starts at function statSequence
     \begin{MyIndentedList}
-        \item 1.	Check if the next token to consume is “end” or “else”. If true, return NULL
-        \item 2.	Handle each statement in while loop; Call ifStatement, whileStatement, returnStatement if next token is “if”, “while”, “return”.
-        If next token is identifier, get the token’s type by searching through symbol table of current scope and it’s ancestors’ scopes by using FindSymbol method with argument sGlobal which calls FindSymbol method from parent symbol table.
-        \item 3.	Depending on the type, call either subroutineCall or assignment 
-        \item 4.	If head pointer is NULL then set head as return value of the function called at 2,3
-        \item 5.	Modify tail pointer to appropriately maintain linked list
-        \item 6.	If next token is semicolon, consume it. Else, break
-        \item 7.	Return head pointer                
+        \item 1. Check if the next token to consume is “end” or “else”. If true, return NULL
+        \item 2. Handle each statement in while loop; call \texttt{ifStatement}, \texttt{whileStatement}, \texttt{returnStatement} if next token is “if”, “while”, “return”.\\
+        If next token is identifier, get the token’s type by searching through symbol table of current scope and it’s ancestors’ scopes by using \texttt{FindSymbol} method with argument sGlobal which calls \texttt{FindSymbol} method from parent symbol table.
+        \item 3. Depending on the type, call either \texttt{subroutineCall} or \texttt{assignment} 
+        \item 4. If head pointer is NULL then set head as return value of the function called at 2,3
+        \item 5. Modify tail pointer to appropriately maintain linked list
+        \item 6. If next token is semicolon, consume it. Else, break
+        \item 7. Return head pointer                
     \end{MyIndentedList}
 \end{MyIndentedList}
 Functions used here is simple and doens’t create any symbol table and quite self-explanatory
@@ -241,37 +257,40 @@ Functions used here is simple and doens’t create any symbol table and quite se
     \item The implmentation of parsing expression starts at function \texttt{expression}.
     \item expression:
     \begin{MyIndentedList}
-        \item 1. Call simpleexpr for left.
-        \item 2. If next token is relational operator, consume it and call simpleexpr for right.
+        \item 1. Call \texttt{simpleexpr} for left.
+        \item 2. If next token is relational operator, consume it and call \texttt{simpleexpr} for right.
         \item 3. Create appropriate node depending on the operator and return it.
     \end{MyIndentedList}
-    \item simpleexpr:
+    \item \texttt{simpleexpr}: Parse simple expression, which can contains number of terms, by making tree deeper.
     \begin{MyIndentedList}
-        \item 1. If next token is plus or minus, consume it and call term for left.
-        \item 2. If next token is term operator, consume it and call term for right 
+        \item 1. If next token is sign(plus or minus), consume itwith \texttt{unaryOp} which conatins \texttt{term} or if not, just call \texttt{term} for node.
+        \item 2. If next token is term operator, consume it and call \texttt{term} for right.
+        \item 3. Make node to left.
+        \item 4. Create node with left, right and operator.
+        \item 5. Repeat 2-4 until there is no term operator.
     \end{MyIndentedList}
     \item term:
     \begin{MyIndentedList}
-        \item 1. Call factor for left.
-        \item 2. If next token is factor operator, consume it and call factor for right.
+        \item 1. call \texttt{factor} for left.
+        \item 2. If next token is factor operator, consume it and call \texttt{factor} for right.
         \item 3. Create appropriate node depending on the operator and return it.
     \end{MyIndentedList}
     \item factor:
     \begin{MyIndentedList}
-        \item 1. If next token is identifier, call qualident.
-        \item 2. If next token is number, call number.
-        \item 3. If next token is boolean, call boolean.
-        \item 4. If next token is character, call character.
-        \item 5. If next token is string, call string.
-        \item 6. If next token is left parenthesis, consume it and call expression. Then consume right parenthesis.
-        \item 7. If next token is exclamation mark, consume it and call factor.
+        \item 1. If next token is identifier, call \texttt{qualident}.
+        \item 2. If next token is number, call \texttt{number}.
+        \item 3. If next token is boolean, call \texttt{boolean}.
+        \item 4. If next token is character, call \texttt{character}.
+        \item 5. If next token is string, call \texttt{string}.
+        \item 6. If next token is left parenthesis, consume it and call \texttt{expression}. Then consume right parenthesis.
+        \item 7. If next token is exclamation mark, consume it and call \texttt{factor}.
     \end{MyIndentedList}
     \item unaryOp: For sign of the number
     \item qualident:
         \begin{MyIndentedList}
             \item Here we handle variable including arrays.
             \item First, we find its symbol by using FindSymbol method.
-            \item We use that Csymbol pointer to create either CAstArrayDesignator or CAstDesignator depending on rather it contains brackets.
+            \item We use that Csymbol pointer to create either \texttt{CAstArrayDesignator} or \texttt{CAstDesignator} depending on rather it contains brackets.
             \item It returns the created instance. 
         \end{MyIndentedList}
     \item charConst:
@@ -289,20 +308,11 @@ Functions used here is simple and doens’t create any symbol table and quite se
     \end{MyIndentedList}
 \end{MyIndentedList}
 
-% \subsection{Algorithm}
-% \begin{algorithm}[H]
-%     \begin{algorithmic}
-%         \STATE\caption{Description of the algorithm}
-%         \REQUIRE\(\text{input}\)
-%         \ENSURE \(\text{output}\)
-%         \STATE\(AAA\)\\
-%     \end{algorithmic}
-% \end{algorithm}
-
 \section{Result}
 We utilized a provided test program that printed the AST to validate our parser's functionality.
 The test program allowed us to examine the generated AST for different test cases.
-In addition to the provided test cases, we created custom test cases to cover more complex and special scenarios, ensuring the robustness of our parser.
+In addition to the provided test cases, we modified some test cases to cover more complex and special scenarios, ensuring the robustness of our parser.
+All the test cases are passed and the ASTs are generated as expected. 
 
 \bibliographystyle{plain}
 \bibliography{report}
@@ -362,43 +372,30 @@ We implemented additional method to implement parser.
 List of method is below.
 
 \begin{itemize}
-    \item \texttt{parseModule} : parse module
-    \item \texttt{parseConstDecl} : parse const declaration
-    \item \texttt{parseVarDecl} : parse variable declaration
-    \item \texttt{parseSubroutineDecl} : parse subroutine declaration
-    \item \texttt{parseFormalParam} : parse formal parameter
-    \item \texttt{parseSubroutineBody} : parse subroutine body
-    \item \texttt{parseStatSequence} : parse statement sequence
-    \item \texttt{parseStatement} : parse statement
-    \item \texttt{parseAssignment} : parse assignment
-    \item \texttt{parseSubroutineCall} : parse subroutine call
-    \item \texttt{parseIfStatement} : parse if statement
-    \item \texttt{parseWhileStatement} : parse while statement
-    \item \texttt{parseReturnStatement} : parse return statement
-    \item \texttt{parseSimpleExpr} : parse simple expression
-    \item \texttt{parseTerm} : parse term
-    \item \texttt{parseFactor} : parse factor
-    \item \texttt{parseQualident} : parse qualident
-    \item \texttt{parseNumber} : parse number
-    \item \texttt{parseBoolean} : parse boolean
-    \item \texttt{parseChar} : parse char
-    \item \texttt{parseString} : parse string
-    \item \texttt{parseType} : parse type
-    \item \texttt{parseBasetype} : parse basetype
-    \item \texttt{parseIdent} : parse identifier
-    \item \texttt{parseRelOp} : parse relational operator
-    \item \texttt{parseTermOp} : parse term operator
-    \item \texttt{parseFactOp} : parse factor operator
-    \item \texttt{constChar} : parse constant char
+    \item \texttt{procDeclaration} : parse procedure declaration
+    \item \texttt{constDeclaration} : parse const declaration
+    \item \texttt{varDeclaration} : parse variable declaration sequence
+    \item \texttt{varDecl} : parse variable declaration\\
+    \item \texttt{assignment} : parse assignment
+    \item \texttt{functionCall} : parse subroutine call
+    \item \texttt{ifStatement} : parse if statement
+    \item \texttt{whileStatement} : parse while statement
+    \item \texttt{returnStatement} : parse return statement
+    \item \texttt{subroutineCall} : parse subroutine declaration\\
+    \item \texttt{simpleExpr} : parse simple expression
+    \item \texttt{qualident} : parse identifier
+    \item \texttt{booleanConst} : parse boolean
+    \item \texttt{charConst} : parse char
+    \item \texttt{stringConst} : parse string
+    \item \texttt{unaryOp} : parse unary operator
 \end{itemize}
-\subsection{Additional Test Cases}
-\textbf{Input:}
-\begin{lstlisting}[language=Python]
-    # Any additional test case
-\end{lstlisting}
-
-\textbf{Output:}
-\begin{verbatim}
-    result
-\end{verbatim}
+List of method modified for SNUPL/1 to SNUPL/2 is below.
+\begin{itemize}
+    \item \texttt{InitSymbolTable} : initialize symbol table
+    \item \texttt{statSequence} : parse statement sequence
+    \item \texttt{term} : parse term
+    \item \texttt{expression} : parse expression
+    \item \texttt{factor} : parse factor
+    \item \texttt{number} : parse integer    
+\end{itemize}
 \end{document}
