@@ -14,14 +14,14 @@ Refer to the [SnuPL/2 language specification](specification/SnuPL2.md).
 
 The project is split into the following phases:
 
-| Phase | Topic                                                 | Handout                 | Deadline                       |
-|:-----:|:------------------------------------------------------|:------------------------|:-------------------------------|
-| 1     | [Lexical Analysis](assignments/1.Lexical.Analysis.md) | Wednesday, September 13 | Tuesday, September 26, 23:59   |
-| 2     | [Syntax Analysis](assignments/2.Syntax.Analysis.md)   | Wednesday, September 27 | Tuesday, October 17, 23:59     |
-| 3     | Semantic Analysis                                     | tba                     | tba                            |
-| 4     | Intermediate Code Generation                          | tba                     | tba                            |
-| 5     | Code Generation                                       | tba                     | tba                            |
-| 6     | Project Report                                        |                         | tba                            |
+| Phase | Topic                                                  | Handout                 | Deadline                       |
+|:-----:|:-------------------------------------------------------|:------------------------|:-------------------------------|
+| 1     | [Lexical Analysis](assignments/1.Lexical.Analysis.md)  | Wednesday, September 13 | Tuesday, September 26, 23:59   |
+| 2     | [Syntax Analysis](assignments/2.Syntax.Analysis.md)    | Wednesday, September 27 | Tuesday, October 17, 23:59     |
+| 3     | [Semantic Analysis](assignments/3.Semantic.Analysis.md)| Wednesday, November   1 | Monday, November 13, 23:59     |
+| 4     | Intermediate Code Generation                           | tba                     | tba                            |
+| 5     | Code Generation                                        | tba                     | tba                            |
+| 6     | Project Report                                         |                         | tba                            |
 
 
 
