@@ -54,7 +54,21 @@ bool CAstScope::TypeCheck(CToken *t, string *msg) const
 {
   bool result = true;
 
-  // TODO (phase 3)
+  try {
+    CAstStatement *s = _statseq;
+    while (result && (s != NULL)) {
+      result = s->TypeCheck(t, msg);
+      s = s->GetNext();
+    }
+
+    vector<CAstScope*>::const_iterator it = _children.begin();
+    while (result && (it != _children.end())) {
+      result = (*it)->TypeCheck(t, msg);
+      it++;
+    }
+  } catch (int e) {
+    result = false;
+  }
 
   return result;
 }
@@ -94,8 +108,11 @@ const CType* CAstType::GetType(void) const
 bool CAstStatAssign::TypeCheck(CToken *t, string *msg)
 {
   // TODO (phase 3)
+  bool result = _lhs->TypeCheck(t, msg) && _rhs->TypeCheck(t, msg);
+  
+  result = result && _lhs->GetType()->Match((_rhs->GetType()));
 
-  return true;
+  return result;
 }
 
 const CType* CAstStatAssign::GetType(void) const
@@ -116,9 +133,32 @@ bool CAstStatCall::TypeCheck(CToken *t, string *msg)
 //--------------------------------------------------------------------------------------------------
 // CAstStatReturn
 //
-bool CAstStatReturn::TypeCheck(CToken *t, string *msg)
+bool CAstStatReturn::TypeCheck(CToken *t, string *msg) 
 {
-  // TODO (phase 3)
+  const CType *st = GetScope()->GetType();
+  CAstExpression *e = GetExpression();
+
+  if (st->Match(CTypeManager::Get()->GetNull())) {
+    if (e != NULL) {
+      if (t != NULL) *t = e->GetToken();
+      if (msg != NULL) *msg = "superfluous expression after return.";
+      return false;
+    }
+  } else {
+    if (e == NULL) {
+      if (t != NULL) *t = GetToken();
+      if (msg != NULL) *msg = "expression expected after return.";
+      return false;
+    }
+
+    if (!e->TypeCheck(t, msg)) return false;
+
+    if (!st->Match(e->GetType())) {
+      if (t != NULL) *t = e->GetToken();
+      if (msg != NULL) *msg = "return type mismatch.";
+      return false;
+    }
+  }
 
   return true;
 }
@@ -142,9 +182,7 @@ const CType* CAstStatReturn::GetType(void) const
 //
 bool CAstStatIf::TypeCheck(CToken *t, string *msg)
 {
-  // TODO (phase 3)
-
-  return true;
+  return GetCondition()->TypeCheck(t, msg) && GetIfBody()->TypeCheck(t, msg) && GetElseBody()->TypeCheck(t, msg);
 }
 
 
@@ -153,9 +191,7 @@ bool CAstStatIf::TypeCheck(CToken *t, string *msg)
 //
 bool CAstStatWhile::TypeCheck(CToken *t, string *msg)
 {
-  // TODO (phase 3)
-
-  return true;
+  return GetCondition()->TypeCheck(t, msg) && GetBody()->TypeCheck(t, msg);
 }
 
 
@@ -179,22 +215,158 @@ const CDataInitializer* CAstExpression::Evaluate(void) const
 bool CAstBinaryOp::TypeCheck(CToken *t, string *msg)
 {
   // TODO (phase 3)
-
-  return true;
+  GetType();
 }
 
 const CType* CAstBinaryOp::GetType(void) const
 {
   // TODO (phase 3)
+  // expression ::= simpleexpr [ relOp simpleexpr ]. op : =, #, <, <=, >, >=
+  // simpleexpr ::= ["+"|"-"] term { termOp term }. op : +, -, ||
+  // term ::= factor { ("*"|"/" | "&&") factor }. op : *, /, &&
+  const CType *t = NULL;
+  const CType *lt = GetLeft()->GetType();
+  const CType *rt = GetRight()->GetType();
+  
+  const EOperation op = GetOperation();
+  
+  if(op == opEqual || op == opNotEqual || op == opLessThan || op == opLessEqual || op == opBiggerThan || op == opBiggerEqual) {
+    if(lt->IsBoolean() && rt->IsBoolean()) {
+      if(op == opEqual || op == opNotEqual) t = CTypeManager::Get()->GetBool();
+      else t = NULL;
+    } else if(lt->IsInteger() && rt->IsInteger()) {
+      t = CTypeManager::Get()->GetBool();
+    } else if(lt->IsLongint() && rt->IsLongint()) {
+      t = CTypeManager::Get()->GetBool();
+    } else if (lt->IsLongint() && rt->IsInteger()){
+      t = CTypeManager::Get()->GetBool();
+    } else if (lt->IsInteger() && rt->IsLongint()){
+      t = CTypeManager::Get()->GetBool();
+    }  else if (lt->IsChar() && rt->IsChar()) {
+      t = CTypeManager::Get()->GetBool();
+    } else {
+      t = NULL;
+    }
+  } else if(op == opAdd || op == opSub || op == opMul || op == opDiv) {
+    if(lt->IsInteger() || rt->IsInteger()){
+      t = CTypeManager::Get()->GetInteger();
+    } else if(lt->IsLongint() && rt->IsLongint()) {
+      t = CTypeManager::Get()->GetLongint();
+    } else if (lt->IsLongint() && rt->IsInteger()){
+      t = CTypeManager::Get()->GetLongint();
+    } else if (lt->IsInteger() && rt->IsLongint()){
+      t = CTypeManager::Get()->GetLongint();
+    } else{
+      t = NULL;
+    }
+  } else if(op == opAnd || op == opOr) {
+    if(lt->IsBoolean() && rt->IsBoolean()) {
+      t = CTypeManager::Get()->GetBool();
+    } else {
+      t = NULL;
+    }
+  } else {
+    t = NULL;
+  }
 
-  return CTypeManager::Get()->GetInteger();
+  return t;
 }
 
 const CDataInitializer* CAstBinaryOp::Evaluate(void) const
 {
   // TODO (phase 3)
+  const CType *t = GetLeft()->GetType();
+  const CType *t2 = GetRight()->GetType();
+  const CDataInitializer *l = GetLeft()->Evaluate();
+  const CDataInitializer *r = GetRight()->Evaluate();
+  CDataInitializer *result = NULL;
+  const EOperation op = GetOperation();
 
-  return NULL;
+  if(t->IsBoolean()){
+    bool lval = dynamic_cast<const CDataInitBoolean*>(l)->GetData();
+    bool rval = dynamic_cast<const CDataInitBoolean*>(r)->GetData();
+    CDataInitializer *result = NULL;
+    if(op == opEqual){
+      result = new CDataInitBoolean(lval == rval);
+    }else if(op == opNotEqual){
+      result = new CDataInitBoolean(lval != rval);
+    }
+  } else if(t->IsLongint() || t2->IsLongint()){
+    long long lval;
+    long long rval;
+    if(t->IsLongint()) lval = dynamic_cast<const CDataInitLongint*>(l)->GetData();
+    else lval = dynamic_cast<const CDataInitLongint*>(r)->GetData();
+
+    if(t2->IsLongint()) rval = dynamic_cast<const CDataInitLongint*>(l)->GetData();
+    else rval = dynamic_cast<const CDataInitLongint*>(r)->GetData();
+    CDataInitializer *result = NULL;
+    if(op == opEqual){
+      result = new CDataInitBoolean(lval == rval);
+    }else if(op == opNotEqual){
+      result = new CDataInitBoolean(lval != rval);
+    } else if(op == opLessThan){
+      result = new CDataInitBoolean(lval < rval);
+    } else if(op == opLessEqual){
+      result = new CDataInitBoolean(lval <= rval);
+    } else if(op == opBiggerThan){
+      result = new CDataInitBoolean(lval > rval);
+    } else if(op == opBiggerEqual){
+      result = new CDataInitBoolean(lval >= rval);
+    } else if(op == opAdd){
+      result = new CDataInitLongint(lval + rval);
+    }else if(op == opSub){
+      result = new CDataInitLongint(lval - rval);
+    }else if(op == opMul){
+      result = new CDataInitLongint(lval * rval);
+    }else if(op == opDiv){
+      result = new CDataInitLongint(lval / rval);
+    }
+  } else if(t->IsInteger()){
+    int lval = dynamic_cast<const CDataInitInteger*>(l)->GetData();
+    int rval = dynamic_cast<const CDataInitInteger*>(r)->GetData();
+    CDataInitializer *result = NULL;
+    if(op == opEqual){
+      result = new CDataInitBoolean(lval == rval);
+    }else if(op == opNotEqual){
+      result = new CDataInitBoolean(lval != rval);
+    } else if(op == opLessThan){
+      result = new CDataInitBoolean(lval < rval);
+    } else if(op == opLessEqual){
+      result = new CDataInitBoolean(lval <= rval);
+    } else if(op == opBiggerThan){
+      result = new CDataInitBoolean(lval > rval);
+    } else if(op == opBiggerEqual){
+      result = new CDataInitBoolean(lval >= rval);
+    } else if(op == opAdd){
+      result = new CDataInitInteger(lval + rval);
+    }else if(op == opSub){
+      result = new CDataInitInteger(lval - rval);
+    }else if(op == opMul){
+      result = new CDataInitInteger(lval * rval);
+    }else if(op == opDiv){
+      result = new CDataInitInteger(lval / rval);
+    }
+  } else if(t->IsChar()){
+    char lval = dynamic_cast<const CDataInitChar*>(l)->GetData();
+    char rval = dynamic_cast<const CDataInitChar*>(r)->GetData();
+    CDataInitializer *result = NULL;
+    if(op == opEqual){
+      result = new CDataInitBoolean(lval == rval);
+    }else if(op == opNotEqual){
+      result = new CDataInitBoolean(lval != rval);
+    } else if(op == opLessThan){
+      result = new CDataInitBoolean(lval < rval);
+    } else if(op == opLessEqual){
+      result = new CDataInitBoolean(lval <= rval);
+    } else if(op == opBiggerThan){
+      result = new CDataInitBoolean(lval > rval);
+    } else if(op == opBiggerEqual){
+      result = new CDataInitBoolean(lval >= rval);
+    } 
+  }
+
+
+  return result;
 }
 
 
@@ -204,24 +376,33 @@ const CDataInitializer* CAstBinaryOp::Evaluate(void) const
 bool CAstUnaryOp::TypeCheck(CToken *t, string *msg)
 {
   // TODO (phase 3)
-
-  return true;
+  EOperation op = GetOperation();
+  if(op != opNeg) return GetOperand()->TypeCheck(t, msg);
+  CAstExpression *e = GetOperand();
+  // while(1){
+  //   try{
+  //     e = static_cast<CAstBinaryOp*>(e)->GetLeft();
+  //     if(e->GetParenthesized()) break;
+  //   } catch(...){
+  //     break;
+  //   }
+    
+  // }
 }
 
 const CType* CAstUnaryOp::GetType(void) const
 {
   // TODO (phase 3)
-
-  return CTypeManager::Get()->GetInteger();
+  return GetOperand()->GetType();
 }
 
 const CDataInitializer* CAstUnaryOp::Evaluate(void) const
 {
   // TODO (phase 3)
+  CAstExpression *e = GetOperand();
 
   return NULL;
 }
-
 
 //--------------------------------------------------------------------------------------------------
 // CAstSpecialOp
@@ -230,14 +411,22 @@ bool CAstSpecialOp::TypeCheck(CToken *t, string *msg)
 {
   // TODO (phase 3)
 
-  return true;
+  return GetOperand()->TypeCheck(t, msg);
 }
 
 const CType* CAstSpecialOp::GetType(void) const
 {
+  CType *t = NULL;
   // TODO (phase 3)
-
-  return NULL;
+  if(GetOperation() == opAddress){
+    t = const_cast<CPointerType *>(CTypeManager::Get()->GetPointer(GetOperand()->GetType()));
+  }else if(GetOperation() == opDeref){
+    CPointerType *pt = (CPointerType*)GetOperand()->GetType();
+    t = const_cast<CType *>(pt -> GetBaseType());
+  }else if(GetOperation() == opCast || GetOperation() == opWiden || GetOperation() == opNarrow){
+    t = const_cast<CType *>(_type);
+  }
+  return t;
 }
 
 const CDataInitializer* CAstSpecialOp::Evaluate(void) const
@@ -254,8 +443,14 @@ const CDataInitializer* CAstSpecialOp::Evaluate(void) const
 bool CAstFunctionCall::TypeCheck(CToken *t, string *msg)
 {
   // TODO (phase 3)
+  bool result = true;
+  vector<CAstExpression*>::iterator iter  =_arg.begin();
+  while(iter != _arg.end()){
+    result = result && (*iter)->TypeCheck(t, msg);
+    iter++;
+  }
 
-  return true;
+  return false;
 }
 
 const CType* CAstFunctionCall::GetType(void) const
@@ -297,11 +492,15 @@ const CDataInitializer* CAstDesignator::Evaluate(void) const
 //
 bool CAstArrayDesignator::TypeCheck(CToken *t, string *msg)
 {
-  assert(_done);
-
   // TODO (phase 3)
-
-  return true;
+  bool result = true;
+  vector<CAstExpression*>::iterator iter =  _idx.begin();
+  while(iter != _idx.end()){
+    result = result && (*iter)->TypeCheck(t, msg);
+    iter++;
+  }
+  // What about offset?
+  return result;
 }
 
 const CType* CAstArrayDesignator::GetType(void) const
@@ -318,7 +517,31 @@ const CType* CAstArrayDesignator::GetType(void) const
 bool CAstConstant::TypeCheck(CToken *t, string *msg)
 {
   // TODO (phase 3)
-
+  if(_type->IsInteger()){
+    if(_value > INT_MAX  || _value < INT_MIN){
+      if(t != NULL) *t = GetToken();
+      if(msg != NULL) *msg = "integer constant out of range.";
+      return false;
+    }
+  } else if(_type->IsBoolean()){
+    if(_value != 0 && _value != 1){
+      if(t != NULL) *t = GetToken();
+      if(msg != NULL) *msg = "boolean constant out of range.";
+      return false;
+    }
+  } else if(_type->IsChar()){
+    if(_value > CHAR_MAX || _value < CHAR_MIN){
+      if(t != NULL) *t = GetToken();
+      if(msg != NULL) *msg = "char constant out of range.";
+      return false;
+    }
+  } else if(_type->IsLongint()){
+    if(_value > LONG_MAX || _value < LONG_MIN){
+      if(t != NULL) *t = GetToken();
+      if(msg != NULL) *msg = "longint constant out of range.";
+      return false;
+    }
+  }
   return true;
 }
 
@@ -330,8 +553,11 @@ const CType* CAstConstant::GetType(void) const
 const CDataInitializer* CAstConstant::Evaluate(void) const
 {
   // TODO (phase 3)
-
-  return NULL;
+  if (_type->IsLongint())  return new CDataInitLongint((long long)GetValue());
+  if (_type->IsInteger())  return new CDataInitInteger((int)GetValue());
+  if (_type->IsBoolean())  return new CDataInitBoolean((bool)GetValue());
+  if (_type->IsChar())     return new CDataInitChar((char)GetValue());
+  // return NULL;
 }
 
 
@@ -346,14 +572,14 @@ bool CAstStringConstant::TypeCheck(CToken *t, string *msg)
 const CType* CAstStringConstant::GetType(void) const
 {
   // TODO (phase 3)
-
-  return NULL;
+  // done?
+  return _type;
 }
 
 const CDataInitializer* CAstStringConstant::Evaluate(void) const
 {
   // TODO (phase 3)
 
-  return NULL;
+  return _value;
 }
 

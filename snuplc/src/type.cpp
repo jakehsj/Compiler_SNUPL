@@ -87,7 +87,13 @@ CScalarType::CScalarType(const string name)
 bool CScalarType::Match(const CType *t) const
 {
   // TODO (phase 3)
-
+  if(IsPointer() && t->IsPointer()) return true;
+  if(IsBoolean() && t->IsBoolean()) return true;
+  if(IsChar() && t->IsChar()) return true;
+  if(IsLongint() && t->IsLongint()) return true;
+  if(IsLongint() && t->IsInteger()) return true;
+  if(IsInteger() && t->IsLongint()) return true;
+  if(IsInteger() && t->IsInteger()) return true;
   return false;
 }
 

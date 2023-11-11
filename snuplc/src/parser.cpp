@@ -830,6 +830,7 @@ CAstExpression *CParser::factor(CAstScope *s) {
     case tLParens:
       Consume(tLParens);
       n = expression(s);
+      n->SetParenthesized(true);
       Consume(tRParens);
       break;
     case tNot:
