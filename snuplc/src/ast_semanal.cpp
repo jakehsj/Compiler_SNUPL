@@ -215,7 +215,13 @@ const CDataInitializer* CAstExpression::Evaluate(void) const
 bool CAstBinaryOp::TypeCheck(CToken *t, string *msg)
 {
   // TODO (phase 3)
-  GetType();
+  const CType *tt = GetType();
+  if(tt == NULL){
+    if(t != NULL) *t = GetToken();
+    if(msg != NULL) *msg = "type mismatch.";
+    return false;
+  }
+  return true;
 }
 
 const CType* CAstBinaryOp::GetType(void) const
@@ -285,7 +291,6 @@ const CDataInitializer* CAstBinaryOp::Evaluate(void) const
   if(t->IsBoolean()){
     bool lval = dynamic_cast<const CDataInitBoolean*>(l)->GetData();
     bool rval = dynamic_cast<const CDataInitBoolean*>(r)->GetData();
-    CDataInitializer *result = NULL;
     if(op == opEqual){
       result = new CDataInitBoolean(lval == rval);
     }else if(op == opNotEqual){
@@ -299,7 +304,6 @@ const CDataInitializer* CAstBinaryOp::Evaluate(void) const
 
     if(t2->IsLongint()) rval = dynamic_cast<const CDataInitLongint*>(l)->GetData();
     else rval = dynamic_cast<const CDataInitLongint*>(r)->GetData();
-    CDataInitializer *result = NULL;
     if(op == opEqual){
       result = new CDataInitBoolean(lval == rval);
     }else if(op == opNotEqual){
@@ -324,7 +328,6 @@ const CDataInitializer* CAstBinaryOp::Evaluate(void) const
   } else if(t->IsInteger()){
     int lval = dynamic_cast<const CDataInitInteger*>(l)->GetData();
     int rval = dynamic_cast<const CDataInitInteger*>(r)->GetData();
-    CDataInitializer *result = NULL;
     if(op == opEqual){
       result = new CDataInitBoolean(lval == rval);
     }else if(op == opNotEqual){
@@ -349,7 +352,6 @@ const CDataInitializer* CAstBinaryOp::Evaluate(void) const
   } else if(t->IsChar()){
     char lval = dynamic_cast<const CDataInitChar*>(l)->GetData();
     char rval = dynamic_cast<const CDataInitChar*>(r)->GetData();
-    CDataInitializer *result = NULL;
     if(op == opEqual){
       result = new CDataInitBoolean(lval == rval);
     }else if(op == opNotEqual){
@@ -379,15 +381,22 @@ bool CAstUnaryOp::TypeCheck(CToken *t, string *msg)
   EOperation op = GetOperation();
   if(op != opNeg) return GetOperand()->TypeCheck(t, msg);
   CAstExpression *e = GetOperand();
-  // while(1){
-  //   try{
-  //     e = static_cast<CAstBinaryOp*>(e)->GetLeft();
-  //     if(e->GetParenthesized()) break;
-  //   } catch(...){
-  //     break;
-  //   }
-    
-  // }
+  while(1){
+    try{
+      e = dynamic_cast<CAstBinaryOp*>(e)->GetLeft();
+      if(e->GetParenthesized()) break;
+    } catch(...){
+      break;
+    }
+  }
+  if(dynamic_cast<CAstConstant*>(e) == NULL) return GetOperand()->TypeCheck(t, msg);
+  else if(dynamic_cast<CAstConstant*>(e)->GetType()->IsInteger() || dynamic_cast<CAstConstant*>(e)->GetType()->IsLongint()){
+    dynamic_cast<CAstConstant*>(e)->FoldNeg();
+    return dynamic_cast<CAstConstant*>(e)->TypeCheck(t, msg);
+  }
+  *t = GetToken();
+  *msg = "negated expression must be integer or longint.";
+  return false;
 }
 
 const CType* CAstUnaryOp::GetType(void) const
@@ -400,7 +409,35 @@ const CDataInitializer* CAstUnaryOp::Evaluate(void) const
 {
   // TODO (phase 3)
   CAstExpression *e = GetOperand();
-
+  EOperation op = GetOperation();
+  if(op == opPos) return e->Evaluate();
+  else if(op == opNeg){
+    while(1){
+      try{
+        e = dynamic_cast<CAstBinaryOp*>(e)->GetLeft();
+        if(e->GetParenthesized()) break;
+      } catch(...){
+        break;
+      }
+    }
+    if(e->GetParenthesized()){
+      int val = dynamic_cast<const CDataInitInteger*>(GetOperand()->Evaluate())->GetData();
+      return new CDataInitInteger(-val);
+    } else return GetOperand()->Evaluate();
+  } else if(op == opNot){
+    while(1){
+      try{
+        e = dynamic_cast<CAstBinaryOp*>(e)->GetLeft();
+        if(e->GetParenthesized()) break;
+      } catch(...){
+        break;
+      }
+    }
+    if(e->GetParenthesized()){
+      bool val = dynamic_cast<const CDataInitBoolean*>(GetOperand()->Evaluate())->GetData();
+      return new CDataInitBoolean(!val);
+    } else return GetOperand()->Evaluate();
+  }
   return NULL;
 }
 
@@ -519,6 +556,7 @@ bool CAstConstant::TypeCheck(CToken *t, string *msg)
   // TODO (phase 3)
   if(_type->IsInteger()){
     if(_value > INT_MAX  || _value < INT_MIN){
+      if(_value == INT_MIN && _negated == true) return true;
       if(t != NULL) *t = GetToken();
       if(msg != NULL) *msg = "integer constant out of range.";
       return false;
@@ -537,6 +575,7 @@ bool CAstConstant::TypeCheck(CToken *t, string *msg)
     }
   } else if(_type->IsLongint()){
     if(_value > LONG_MAX || _value < LONG_MIN){
+      if(_value == LONG_MIN && _negated == true) return true;
       if(t != NULL) *t = GetToken();
       if(msg != NULL) *msg = "longint constant out of range.";
       return false;
