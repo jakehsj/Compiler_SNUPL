@@ -288,22 +288,14 @@ void CParser::constDeclaration(CAstScope *scope) {
 
   Consume(tConstDecl);
   while (_scanner->Peek().GetType() == tIdent) {
-    int size = scope->GetSymbolTable()->GetSymbols().size();
     vector<string> idents;
-    CType *ty = varDecl(idents);
-    for (auto &i : idents) {
-      CSymbol *s = scope->CreateConst(i, ty, NULL);
-      scope->GetSymbolTable()->AddSymbol(s);
-    }
+    CType *ty = varDecl(idents, scope);
     Consume(tRelOp);
     CAstExpression *cExp = expression(scope);
-    vector<CSymbol *> symbols = scope->GetSymbolTable()->GetSymbols();
-    int diff = symbols.size() - size;
-    for (vector<CSymbol *>::reverse_iterator riter = symbols.rbegin();
-         riter != symbols.rbegin() + diff; riter++) {
-      CDataInitializer *dataInit =
-          const_cast<CDataInitializer *>(cExp->Evaluate());
-      (*riter)->SetData(dataInit);
+    CDataInitializer *dataInit = const_cast<CDataInitializer *>(cExp->Evaluate());
+    for (auto &i : idents) {
+      CSymbol *s = scope->CreateConst(i, ty, dataInit);
+      scope->GetSymbolTable()->AddSymbol(s);
     }
     Consume(tSemicolon);
   }
@@ -317,7 +309,7 @@ void CParser::varDeclaration(CAstScope *scope) {
   Consume(tVarDecl);
   while (_scanner->Peek().GetType() == tIdent) {
     vector<string> idents;
-    CType *ty = varDecl(idents);
+    CType *ty = varDecl(idents, scope);
     for (auto &i : idents) {
       CSymbol *s = scope->CreateVar(i, ty);
       scope->GetSymbolTable()->AddSymbol(s);
@@ -334,7 +326,7 @@ void CParser::varDeclaration(CAstScope *scope) {
   // }
 }
 
-CType *CParser::varDecl(vector<string> &idents) {
+CType *CParser::varDecl(vector<string> &idents, CAstScope* scope) {
   //  varDecl           = ident { "," ident } ":" tm.
   CToken t;
   while (_scanner->Peek().GetType() == tIdent) {
@@ -349,10 +341,22 @@ CType *CParser::varDecl(vector<string> &idents) {
   }
   t = (_scanner->Get());
   EToken baseType = t.GetType();
-  vector<CAstConstant *> cAstConsts;
+  vector<long long> indexValues;
   while (_scanner->Peek().GetType() == tLBrak) {
     Consume(tLBrak);
-    CAstConstant *c = number();
+    CAstExpression *expr = simpleexpr(scope);
+    const CType * exprType = expr->GetType();
+    long long exprValue;
+    if(exprType->IsLongint()){
+      const CDataInitLongint *d = dynamic_cast<const CDataInitLongint*>(expr->Evaluate());
+      exprValue = d->GetData();
+    }else if (exprType->IsInt()){
+      const CDataInitInteger *d = dynamic_cast<const CDataInitInteger*>(expr->Evaluate());
+      exprValue = d->GetData();
+    }else {
+      SetError(t, "Array index must be integer");
+    }
+    indexValues.push_back(exprValue);
     Consume(tRBrak);
   }
   CTypeManager *tm = CTypeManager::Get();
@@ -379,9 +383,10 @@ CType *CParser::varDecl(vector<string> &idents) {
       SetError(t, "invalid type");
       break;
   }
-  while (cAstConsts.size() > 0) {
-    CAstConstant *constExpr = cAstConsts.back();
-    const CType *cty = CTypeManager::Get()->GetArray(constExpr->GetValue(), ty);
+  while (indexValues.size() > 0) {
+    long long index = indexValues.back();
+    indexValues.pop_back();
+    const CType *cty = CTypeManager::Get()->GetArray(index, ty);
     ty = const_cast<CType *>(cty);
   }
   return ty;
@@ -404,7 +409,7 @@ void CParser::procedureDecl(CAstScope *scope) {
     Consume(tLParens);
     while (_scanner->Peek().GetType() == tIdent) {
       vector<string> idents;
-      CType *ty = varDecl(idents);
+      CType *ty = varDecl(idents, scope);
       varDeclSequence.push_back(make_pair(idents, ty));
       if (_scanner->Peek().GetType() == tSemicolon) {
         Consume(tSemicolon);
@@ -418,7 +423,7 @@ void CParser::procedureDecl(CAstScope *scope) {
     Consume(tColon);
     CToken t = (_scanner->Get());
     EToken baseType = t.GetType();
-    vector<CAstConstant *> cAstConsts;
+    vector<CAstConstant *> indexValues;
     while (_scanner->Peek().GetType() == tLBrak) {
       Consume(tLBrak);
       Consume(tInteger, &t);
@@ -449,8 +454,8 @@ void CParser::procedureDecl(CAstScope *scope) {
         break;
     }
 
-    while (cAstConsts.size() > 0) {
-      CAstConstant *constExpr = cAstConsts.back();
+    while (indexValues.size() > 0) {
+      CAstConstant *constExpr = indexValues.back();
       const CType *cty =
           CTypeManager::Get()->GetArray(constExpr->GetValue(), returnType);
       returnType = const_cast<CType *>(cty);

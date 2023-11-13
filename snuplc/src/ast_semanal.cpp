@@ -50,20 +50,20 @@ const CType* CAstNode::GetType(void) const
 //------------------------------------------------------------------------------
 // CAstScope
 //
-bool CAstScope::TypeCheck(CToken *t, string *msg) const
+bool CAstScope::TypeCheck(CToken *symoblType, string *msg) const
 {
   bool result = true;
 
   try {
     CAstStatement *s = _statseq;
     while (result && (s != NULL)) {
-      result = s->TypeCheck(t, msg);
+      result = s->TypeCheck(symoblType, msg);
       s = s->GetNext();
     }
 
     vector<CAstScope*>::const_iterator it = _children.begin();
     while (result && (it != _children.end())) {
-      result = (*it)->TypeCheck(t, msg);
+      result = (*it)->TypeCheck(symoblType, msg);
       it++;
     }
   } catch (int e) {
@@ -105,10 +105,10 @@ const CType* CAstType::GetType(void) const
 //--------------------------------------------------------------------------------------------------
 // CAstStatAssign
 //
-bool CAstStatAssign::TypeCheck(CToken *t, string *msg)
+bool CAstStatAssign::TypeCheck(CToken *symoblType, string *msg)
 {
   // TODO (phase 3)
-  bool result = _lhs->TypeCheck(t, msg) && _rhs->TypeCheck(t, msg);
+  bool result = _lhs->TypeCheck(symoblType, msg) && _rhs->TypeCheck(symoblType, msg);
   
   result = result && _lhs->GetType()->Match((_rhs->GetType()));
 
@@ -124,37 +124,37 @@ const CType* CAstStatAssign::GetType(void) const
 //--------------------------------------------------------------------------------------------------
 // CAstStatCall
 //
-bool CAstStatCall::TypeCheck(CToken *t, string *msg)
+bool CAstStatCall::TypeCheck(CToken *symoblType, string *msg)
 {
-  return GetCall()->TypeCheck(t, msg);
+  return GetCall()->TypeCheck(symoblType, msg);
 }
 
 
 //--------------------------------------------------------------------------------------------------
 // CAstStatReturn
 //
-bool CAstStatReturn::TypeCheck(CToken *t, string *msg) 
+bool CAstStatReturn::TypeCheck(CToken *symoblType, string *msg) 
 {
   const CType *st = GetScope()->GetType();
   CAstExpression *e = GetExpression();
 
   if (st->Match(CTypeManager::Get()->GetNull())) {
     if (e != NULL) {
-      if (t != NULL) *t = e->GetToken();
+      if (symoblType != NULL) *symoblType = e->GetToken();
       if (msg != NULL) *msg = "superfluous expression after return.";
       return false;
     }
   } else {
     if (e == NULL) {
-      if (t != NULL) *t = GetToken();
+      if (symoblType != NULL) *symoblType = GetToken();
       if (msg != NULL) *msg = "expression expected after return.";
       return false;
     }
 
-    if (!e->TypeCheck(t, msg)) return false;
+    if (!e->TypeCheck(symoblType, msg)) return false;
 
     if (!st->Match(e->GetType())) {
-      if (t != NULL) *t = e->GetToken();
+      if (symoblType != NULL) *symoblType = e->GetToken();
       if (msg != NULL) *msg = "return type mismatch.";
       return false;
     }
@@ -165,33 +165,33 @@ bool CAstStatReturn::TypeCheck(CToken *t, string *msg)
 
 const CType* CAstStatReturn::GetType(void) const
 {
-  const CType *t = NULL;
+  const CType *symoblType = NULL;
 
   if (GetExpression() != NULL) {
-    t = GetExpression()->GetType();
+    symoblType = GetExpression()->GetType();
   } else {
-    t = CTypeManager::Get()->GetNull();
+    symoblType = CTypeManager::Get()->GetNull();
   }
 
-  return t;
+  return symoblType;
 }
 
 
 //--------------------------------------------------------------------------------------------------
 // CAstStatIf
 //
-bool CAstStatIf::TypeCheck(CToken *t, string *msg)
+bool CAstStatIf::TypeCheck(CToken *symoblType, string *msg)
 {
-  return GetCondition()->TypeCheck(t, msg) && GetIfBody()->TypeCheck(t, msg) && GetElseBody()->TypeCheck(t, msg);
+  return GetCondition()->TypeCheck(symoblType, msg) && GetIfBody()->TypeCheck(symoblType, msg) && GetElseBody()->TypeCheck(symoblType, msg);
 }
 
 
 //--------------------------------------------------------------------------------------------------
 // CAstStatWhile
 //
-bool CAstStatWhile::TypeCheck(CToken *t, string *msg)
+bool CAstStatWhile::TypeCheck(CToken *symoblType, string *msg)
 {
-  return GetCondition()->TypeCheck(t, msg) && GetBody()->TypeCheck(t, msg);
+  return GetCondition()->TypeCheck(symoblType, msg) && GetBody()->TypeCheck(symoblType, msg);
 }
 
 
@@ -212,12 +212,12 @@ const CDataInitializer* CAstExpression::Evaluate(void) const
 //--------------------------------------------------------------------------------------------------
 // CAstBinaryOp
 //
-bool CAstBinaryOp::TypeCheck(CToken *t, string *msg)
+bool CAstBinaryOp::TypeCheck(CToken *symoblType, string *msg)
 {
   // TODO (phase 3)
   const CType *tt = GetType();
   if(tt == NULL){
-    if(t != NULL) *t = GetToken();
+    if(symoblType != NULL) *symoblType = GetToken();
     if(msg != NULL) *msg = "type mismatch.";
     return false;
   }
@@ -230,7 +230,7 @@ const CType* CAstBinaryOp::GetType(void) const
   // expression ::= simpleexpr [ relOp simpleexpr ]. op : =, #, <, <=, >, >=
   // simpleexpr ::= ["+"|"-"] term { termOp term }. op : +, -, ||
   // term ::= factor { ("*"|"/" | "&&") factor }. op : *, /, &&
-  const CType *t = NULL;
+  const CType *symoblType = NULL;
   const CType *lt = GetLeft()->GetType();
   const CType *rt = GetRight()->GetType();
   
@@ -238,57 +238,57 @@ const CType* CAstBinaryOp::GetType(void) const
   
   if(op == opEqual || op == opNotEqual || op == opLessThan || op == opLessEqual || op == opBiggerThan || op == opBiggerEqual) {
     if(lt->IsBoolean() && rt->IsBoolean()) {
-      if(op == opEqual || op == opNotEqual) t = CTypeManager::Get()->GetBool();
-      else t = NULL;
+      if(op == opEqual || op == opNotEqual) symoblType = CTypeManager::Get()->GetBool();
+      else symoblType = NULL;
     } else if(lt->IsInteger() && rt->IsInteger()) {
-      t = CTypeManager::Get()->GetBool();
+      symoblType = CTypeManager::Get()->GetBool();
     } else if(lt->IsLongint() && rt->IsLongint()) {
-      t = CTypeManager::Get()->GetBool();
+      symoblType = CTypeManager::Get()->GetBool();
     } else if (lt->IsLongint() && rt->IsInteger()){
-      t = CTypeManager::Get()->GetBool();
+      symoblType = CTypeManager::Get()->GetBool();
     } else if (lt->IsInteger() && rt->IsLongint()){
-      t = CTypeManager::Get()->GetBool();
+      symoblType = CTypeManager::Get()->GetBool();
     }  else if (lt->IsChar() && rt->IsChar()) {
-      t = CTypeManager::Get()->GetBool();
+      symoblType = CTypeManager::Get()->GetBool();
     } else {
-      t = NULL;
+      symoblType = NULL;
     }
   } else if(op == opAdd || op == opSub || op == opMul || op == opDiv) {
     if(lt->IsInteger() || rt->IsInteger()){
-      t = CTypeManager::Get()->GetInteger();
+      symoblType = CTypeManager::Get()->GetInteger();
     } else if(lt->IsLongint() && rt->IsLongint()) {
-      t = CTypeManager::Get()->GetLongint();
+      symoblType = CTypeManager::Get()->GetLongint();
     } else if (lt->IsLongint() && rt->IsInteger()){
-      t = CTypeManager::Get()->GetLongint();
+      symoblType = CTypeManager::Get()->GetLongint();
     } else if (lt->IsInteger() && rt->IsLongint()){
-      t = CTypeManager::Get()->GetLongint();
+      symoblType = CTypeManager::Get()->GetLongint();
     } else{
-      t = NULL;
+      symoblType = NULL;
     }
   } else if(op == opAnd || op == opOr) {
     if(lt->IsBoolean() && rt->IsBoolean()) {
-      t = CTypeManager::Get()->GetBool();
+      symoblType = CTypeManager::Get()->GetBool();
     } else {
-      t = NULL;
+      symoblType = NULL;
     }
   } else {
-    t = NULL;
+    symoblType = NULL;
   }
 
-  return t;
+  return symoblType;
 }
 
 const CDataInitializer* CAstBinaryOp::Evaluate(void) const
 {
   // TODO (phase 3)
-  const CType *t = GetLeft()->GetType();
+  const CType *symoblType = GetLeft()->GetType();
   const CType *t2 = GetRight()->GetType();
   const CDataInitializer *l = GetLeft()->Evaluate();
   const CDataInitializer *r = GetRight()->Evaluate();
   CDataInitializer *result = NULL;
   const EOperation op = GetOperation();
 
-  if(t->IsBoolean()){
+  if(symoblType->IsBoolean()){
     bool lval = dynamic_cast<const CDataInitBoolean*>(l)->GetData();
     bool rval = dynamic_cast<const CDataInitBoolean*>(r)->GetData();
     if(op == opEqual){
@@ -296,10 +296,10 @@ const CDataInitializer* CAstBinaryOp::Evaluate(void) const
     }else if(op == opNotEqual){
       result = new CDataInitBoolean(lval != rval);
     }
-  } else if(t->IsLongint() || t2->IsLongint()){
+  } else if(symoblType->IsLongint() || t2->IsLongint()){
     long long lval;
     long long rval;
-    if(t->IsLongint()) lval = dynamic_cast<const CDataInitLongint*>(l)->GetData();
+    if(symoblType->IsLongint()) lval = dynamic_cast<const CDataInitLongint*>(l)->GetData();
     else lval = dynamic_cast<const CDataInitLongint*>(r)->GetData();
 
     if(t2->IsLongint()) rval = dynamic_cast<const CDataInitLongint*>(l)->GetData();
@@ -325,7 +325,7 @@ const CDataInitializer* CAstBinaryOp::Evaluate(void) const
     }else if(op == opDiv){
       result = new CDataInitLongint(lval / rval);
     }
-  } else if(t->IsInteger()){
+  } else if(symoblType->IsInteger()){
     int lval = dynamic_cast<const CDataInitInteger*>(l)->GetData();
     int rval = dynamic_cast<const CDataInitInteger*>(r)->GetData();
     if(op == opEqual){
@@ -349,7 +349,7 @@ const CDataInitializer* CAstBinaryOp::Evaluate(void) const
     }else if(op == opDiv){
       result = new CDataInitInteger(lval / rval);
     }
-  } else if(t->IsChar()){
+  } else if(symoblType->IsChar()){
     char lval = dynamic_cast<const CDataInitChar*>(l)->GetData();
     char rval = dynamic_cast<const CDataInitChar*>(r)->GetData();
     if(op == opEqual){
@@ -375,11 +375,11 @@ const CDataInitializer* CAstBinaryOp::Evaluate(void) const
 //--------------------------------------------------------------------------------------------------
 // CAstUnaryOp
 //
-bool CAstUnaryOp::TypeCheck(CToken *t, string *msg)
+bool CAstUnaryOp::TypeCheck(CToken *symoblType, string *msg)
 {
   // TODO (phase 3)
   EOperation op = GetOperation();
-  if(op != opNeg) return GetOperand()->TypeCheck(t, msg);
+  if(op != opNeg) return GetOperand()->TypeCheck(symoblType, msg);
   CAstExpression *e = GetOperand();
   while(1){
     try{
@@ -389,12 +389,12 @@ bool CAstUnaryOp::TypeCheck(CToken *t, string *msg)
       break;
     }
   }
-  if(dynamic_cast<CAstConstant*>(e) == NULL) return GetOperand()->TypeCheck(t, msg);
+  if(dynamic_cast<CAstConstant*>(e) == NULL) return GetOperand()->TypeCheck(symoblType, msg);
   else if(dynamic_cast<CAstConstant*>(e)->GetType()->IsInteger() || dynamic_cast<CAstConstant*>(e)->GetType()->IsLongint()){
     dynamic_cast<CAstConstant*>(e)->FoldNeg();
-    return dynamic_cast<CAstConstant*>(e)->TypeCheck(t, msg);
+    return dynamic_cast<CAstConstant*>(e)->TypeCheck(symoblType, msg);
   }
-  *t = GetToken();
+  *symoblType = GetToken();
   *msg = "negated expression must be integer or longint.";
   return false;
 }
@@ -444,32 +444,32 @@ const CDataInitializer* CAstUnaryOp::Evaluate(void) const
 //--------------------------------------------------------------------------------------------------
 // CAstSpecialOp
 //
-bool CAstSpecialOp::TypeCheck(CToken *t, string *msg)
+bool CAstSpecialOp::TypeCheck(CToken *symoblType, string *msg)
 {
   // TODO (phase 3)
 
-  return GetOperand()->TypeCheck(t, msg);
+  return GetOperand()->TypeCheck(symoblType, msg);
 }
 
 const CType* CAstSpecialOp::GetType(void) const
 {
-  CType *t = NULL;
+  CType *symoblType = NULL;
   // TODO (phase 3)
   if(GetOperation() == opAddress){
-    t = const_cast<CPointerType *>(CTypeManager::Get()->GetPointer(GetOperand()->GetType()));
+    symoblType = const_cast<CPointerType *>(CTypeManager::Get()->GetPointer(GetOperand()->GetType()));
   }else if(GetOperation() == opDeref){
     CPointerType *pt = (CPointerType*)GetOperand()->GetType();
-    t = const_cast<CType *>(pt -> GetBaseType());
+    symoblType = const_cast<CType *>(pt -> GetBaseType());
   }else if(GetOperation() == opCast || GetOperation() == opWiden || GetOperation() == opNarrow){
-    t = const_cast<CType *>(_type);
+    symoblType = const_cast<CType *>(_type);
   }
-  return t;
+  return symoblType;
 }
 
 const CDataInitializer* CAstSpecialOp::Evaluate(void) const
 {
   // TODO (phase 3)
-
+  
   return NULL;
 }
 
@@ -477,13 +477,13 @@ const CDataInitializer* CAstSpecialOp::Evaluate(void) const
 //--------------------------------------------------------------------------------------------------
 // CAstFunctionCall
 //
-bool CAstFunctionCall::TypeCheck(CToken *t, string *msg)
+bool CAstFunctionCall::TypeCheck(CToken *symoblType, string *msg)
 {
   // TODO (phase 3)
   bool result = true;
   vector<CAstExpression*>::iterator iter  =_arg.begin();
   while(iter != _arg.end()){
-    result = result && (*iter)->TypeCheck(t, msg);
+    result = result && (*iter)->TypeCheck(symoblType, msg);
     iter++;
   }
 
@@ -504,7 +504,7 @@ const CType* CAstFunctionCall::GetType(void) const
 //--------------------------------------------------------------------------------------------------
 // CAstDesignator
 //
-bool CAstDesignator::TypeCheck(CToken *t, string *msg)
+bool CAstDesignator::TypeCheck(CToken *symoblType, string *msg)
 {
   // TODO (phase 3)
 
@@ -519,8 +519,8 @@ const CType* CAstDesignator::GetType(void) const
 const CDataInitializer* CAstDesignator::Evaluate(void) const
 {
   // TODO (phase 3)
-
-  return NULL;
+  const CSymbol* s = GetSymbol();
+  return s->GetData();
 }
 
 
@@ -529,54 +529,81 @@ const CDataInitializer* CAstDesignator::Evaluate(void) const
 //
 bool CAstArrayDesignator::TypeCheck(CToken *t, string *msg)
 {
-  // TODO (phase 3)
   bool result = true;
-  vector<CAstExpression*>::iterator iter =  _idx.begin();
-  while(iter != _idx.end()){
-    result = result && (*iter)->TypeCheck(t, msg);
-    iter++;
+  const CSymbol* s = GetSymbol();
+  const CType* symoblType = s->GetDataType();
+  assert(symoblType != NULL);
+  if(symoblType->IsArray()){
+    const CArrayType* at = dynamic_cast<const CArrayType*>(symoblType);
+    CArrayType* arrayType = const_cast<CArrayType *>(at);
+    
+    if(_idx.size() > arrayType->GetNDim()){
+      result = false;
+    }
+    vector<CAstExpression*>::iterator iter =  _idx.begin();
+    while(iter != _idx.end() || result != false){
+      const CType* exprType = (*iter)->GetType();
+      long long exprValue;
+      if(exprType->IsLongint()){
+        const CDataInitLongint *d = dynamic_cast<const CDataInitLongint*>((*iter)->Evaluate());
+        exprValue = d->GetData();
+      }else if (exprType->IsInt()){
+        const CDataInitInteger *d = dynamic_cast<const CDataInitInteger*>((*iter)->Evaluate());
+        exprValue = d->GetData();
+      }else {
+        result = false;
+      }
+      result = result && (exprValue <= arrayType->GetNElem());
+      iter++;
+      arrayType = const_cast<CArrayType *> (dynamic_cast<const CArrayType*>(arrayType->GetInnerType()));
+    }
   }
-  // What about offset?
+  else{
+    result = false;
+  }
   return result;
 }
 
 const CType* CAstArrayDesignator::GetType(void) const
 {
   // TODO (phase 3)
-
-  return NULL;
+  CArrayType *t = const_cast<CArrayType *> (dynamic_cast<const CArrayType*>(GetSymbol()->GetDataType()));
+  int l = _idx.size();
+  for(int i=0;i<l;i++){
+    t = const_cast<CArrayType *> (dynamic_cast<const CArrayType*>(t->GetInnerType()));
+  } 
+  return t;
 }
-
 
 //--------------------------------------------------------------------------------------------------
 // CAstConstant
 //
-bool CAstConstant::TypeCheck(CToken *t, string *msg)
+bool CAstConstant::TypeCheck(CToken *symoblType, string *msg)
 {
   // TODO (phase 3)
   if(_type->IsInteger()){
     if(_value > INT_MAX  || _value < INT_MIN){
       if(_value == INT_MIN && _negated == true) return true;
-      if(t != NULL) *t = GetToken();
+      if(symoblType != NULL) *symoblType = GetToken();
       if(msg != NULL) *msg = "integer constant out of range.";
       return false;
     }
   } else if(_type->IsBoolean()){
     if(_value != 0 && _value != 1){
-      if(t != NULL) *t = GetToken();
+      if(symoblType != NULL) *symoblType = GetToken();
       if(msg != NULL) *msg = "boolean constant out of range.";
       return false;
     }
   } else if(_type->IsChar()){
     if(_value > CHAR_MAX || _value < CHAR_MIN){
-      if(t != NULL) *t = GetToken();
+      if(symoblType != NULL) *symoblType = GetToken();
       if(msg != NULL) *msg = "char constant out of range.";
       return false;
     }
   } else if(_type->IsLongint()){
     if(_value > LONG_MAX || _value < LONG_MIN){
       if(_value == LONG_MIN && _negated == true) return true;
-      if(t != NULL) *t = GetToken();
+      if(symoblType != NULL) *symoblType = GetToken();
       if(msg != NULL) *msg = "longint constant out of range.";
       return false;
     }
@@ -603,7 +630,7 @@ const CDataInitializer* CAstConstant::Evaluate(void) const
 //--------------------------------------------------------------------------------------------------
 // CAstStringConstant
 //
-bool CAstStringConstant::TypeCheck(CToken *t, string *msg)
+bool CAstStringConstant::TypeCheck(CToken *symoblType, string *msg)
 {
   return true;
 }

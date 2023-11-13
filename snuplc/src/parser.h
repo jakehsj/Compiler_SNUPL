@@ -135,7 +135,7 @@ class CParser {
   /// @brief parse a type declaration
   /// @param idents vector which will store the varaible names after parsing
   /// @retval CType type which variables are declared with
-  CType *varDecl(vector<string> &idents);
+  CType *varDecl(vector<string> &idents, CAstScope *scope);
   ///@}
 
   /// @addtogroup recursive-parsing
@@ -145,7 +145,7 @@ class CParser {
   /// @brief parse a sequence statement
   /// @param s scope in which the sequence statement is parsed
   /// @retval CAstStatement sequence statement node
-  CAstStatement *CParser::statSequence(CAstScope *s);
+  CAstStatement *statSequence(CAstScope *s);
 
   /// @brief parse a while statement
   /// @param scope scope in which the while statement is parsed
@@ -165,7 +165,7 @@ class CParser {
   /// @brief parse a assignment statement
   /// @param s scope in which the assignment statement is parsed
   /// @retval CAstStatAssign assignment statement node
-  CAstStatAssign *CParser::assignment(CAstScope *s);
+  CAstStatAssign *assignment(CAstScope *s);
 
   /// @brief parse a subroutine call statement
   /// @note like "foo(1, 2, 3);" parse whole statement
