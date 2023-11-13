@@ -294,8 +294,18 @@ void CParser::constDeclaration(CAstScope *scope) {
     CAstExpression *cExp = expression(scope);
     CDataInitializer *dataInit =
         const_cast<CDataInitializer *>(cExp->Evaluate());
+    if(ty->IsArray() && cExp->GetType()->IsArray()){
+      CArrayType *laty = (CArrayType*) ty;
+      CArrayType *raty = (CArrayType*) (cExp->GetType());
+      if (!laty->Match(raty)){
+        SetError(_scanner->Peek(), "Type mismatch in constant expression");}
+    }
     for (auto &i : idents) {
       CSymbol *s = scope->CreateConst(i, ty, dataInit);
+      const CSymbol *cc = scope->GetSymbolTable()->FindSymbol(i, sLocal);
+      if (cc != NULL) {
+        SetError(_scanner->Peek(), "duplicate identifier " + i);
+      }
       scope->GetSymbolTable()->AddSymbol(s);
     }
     Consume(tSemicolon);
@@ -349,21 +359,28 @@ CType *CParser::varDecl(vector<string> &idents, CAstScope *scope) {
   vector<long long> indexValues;
   while (_scanner->Peek().GetType() == tLBrak) {
     Consume(tLBrak);
-    CAstExpression *expr = simpleexpr(scope);
-    const CType *exprType = expr->GetType();
-    long long exprValue;
-    if (exprType->IsLongint()) {
-      const CDataInitLongint *d =
-          dynamic_cast<const CDataInitLongint *>(expr->Evaluate());
-      exprValue = d->GetData();
-    } else if (exprType->IsInt()) {
-      const CDataInitInteger *d =
-          dynamic_cast<const CDataInitInteger *>(expr->Evaluate());
-      exprValue = d->GetData();
-    } else {
-      SetError(t, "Array index must be integer");
+    if(_scanner->Peek().GetType() == tRBrak){
+      indexValues.push_back(CArrayType::OPEN);
+    }else {
+      CAstExpression *expr = simpleexpr(scope);
+      const CType *exprType = expr->GetType();
+      long long exprValue;
+      if (exprType->IsLongint()) {
+        const CDataInitLongint *d =
+            dynamic_cast<const CDataInitLongint *>(expr->Evaluate());
+        exprValue = d->GetData();
+      } else if (exprType->IsInteger()) {
+        const CDataInitInteger *d =
+            dynamic_cast<const CDataInitInteger *>(expr->Evaluate());
+        exprValue = d->GetData();
+      } else {
+        SetError(t, "Array index must be integer");
+      }
+      if(exprValue > CArrayType::MAX_SIZE){
+        SetError(t, "Array index must be smaller thatn MAX_SIZE");
+      }
+      indexValues.push_back(exprValue);
     }
-    indexValues.push_back(exprValue);
     Consume(tRBrak);
   }
   CTypeManager *tm = CTypeManager::Get();
@@ -761,7 +778,23 @@ CAstExpression *CParser::simpleexpr(CAstScope *scope) {
   CAstExpression *n = NULL;
   CToken t1;
   if (_scanner->Peek().GetType() == tPlusMinus) {
-    n = unaryOp(scope);
+    CAstUnaryOp *tmp = unaryOp(scope);
+    EOperation op = tmp->GetOperation();
+    CAstExpression *e = tmp->GetOperand();
+    if(op == opNeg){
+      string *msg;
+      bool res = tmp->TypeCheck(&t1, msg);
+      if(!res) SetError(tmp->GetToken(), *msg);
+      while(dynamic_cast<CAstBinaryOp*>(e) != NULL && e->GetParenthesized() == false){
+        try{
+          e = dynamic_cast<CAstBinaryOp*>(e)->GetLeft();
+        } catch(...){
+          break;
+        }
+      }
+      if(dynamic_cast<CAstConstant *>(e) != NULL) n = e;
+      else n = tmp;
+    }
   } else {
     n = term(scope);
   }
@@ -919,13 +952,13 @@ CAstDesignator *CParser::qualident(CAstScope *scope) {
       Consume(tLBrak);
       CAstExpression *e = expression(scope);
       if (!e->GetType()->IsInt()) SetError(t, "invalid array index: not int");
-      long long index;
-      if (e->GetType()->IsInteger()) {
-        index = ((CDataInitInteger *)e->Evaluate())->GetData();
-      } else if (e->GetType()->IsLongint()) {
-        index = ((CDataInitLongint *)e->Evaluate())->GetData();
-      }
-      if (index < 0) SetError(t, "invalid array index: negative value");
+      // long long index;
+      // if (e->GetType()->IsInteger()) {
+      //   index = ((CDataInitInteger *)e->Evaluate())->GetData();
+      // } else if (e->GetType()->IsLongint()) {
+      //   index = ((CDataInitLongint *)e->Evaluate())->GetData();
+      // }
+      // if (index < 0) SetError(t, "invalid array index: negative value");
       Consume(tRBrak);
       d->AddIndex(e);
     }
@@ -1018,8 +1051,8 @@ CAstUnaryOp *CParser::unaryOp(CAstScope *s) {
   else
     SetError(t, "invalid unary operator.");
   CAstExpression *e = term(s);
-  cerr << t.GetValue() << endl;
-  cerr << e->GetType() << endl;
+  // cerr << t.GetValue() << endl;
+  // cerr << e->GetType() << endl;
   return new CAstUnaryOp(t, op, e);
 }
 

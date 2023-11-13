@@ -87,7 +87,12 @@ CScalarType::CScalarType(const string name)
 bool CScalarType::Match(const CType *t) const
 {
   // TODO (phase 3)
-  if(IsPointer() && t->IsPointer()) return true;
+  if(IsPointer() && t->IsPointer()){
+    const CPointerType *pt = dynamic_cast<const CPointerType*>(t);
+    const CPointerType *this_pt = dynamic_cast<const CPointerType*>(this);
+    assert(pt != NULL);
+    return this->Match(pt);    
+  }
   if(IsBoolean() && t->IsBoolean()) return true;
   if(IsChar() && t->IsChar()) return true;
   if(IsLongint() && t->IsLongint()) return true;
@@ -237,6 +242,7 @@ bool CPointerType::Match(const CType *t) const
   // match if:
   // - this is a void pointer or
   // - the types are compatible with respect to Match()
+  if(GetBaseType() == NULL) return true;
   return GetBaseType()->Match(pt->GetBaseType());
 
   // return false;
@@ -255,6 +261,7 @@ bool CPointerType::Compare(const CType *t) const
   // comparison: match if
   // - this is a void pointer or
   // - the types are compatible with respect to Compare()
+  if(GetBaseType() == NULL) return true;
   return GetBaseType()->Compare(pt->GetBaseType());
 
   // return false;
@@ -335,7 +342,9 @@ bool CArrayType::Match(const CType *t) const
   // match if:
   // - (this is an open array or the number of elements match) and
   // - the inner types are compatible with respect to Match()
-  return GetBaseType()->Match(at->GetBaseType());
+  bool canCompare = (GetNDim() == CArrayType::OPEN) || (GetNElem() == at->GetNElem()) ;
+  canCompare = canCompare && GetInnerType()->Match(at->GetInnerType());
+  return canCompare;
 
   // return false;
 }
@@ -353,8 +362,9 @@ bool CArrayType::Compare(const CType *t) const
   // comparison: match if
   // - the number of elements match and
   // - the inner types are compatible with respect to Compare()
-  return GetBaseType()->Compare(at->GetBaseType());
-
+  bool canCompare = GetNElem() == at->GetNElem();
+  canCompare = canCompare && GetInnerType()->Compare(at->GetInnerType());
+  return canCompare;
   // return false;
 }
 

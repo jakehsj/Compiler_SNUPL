@@ -206,7 +206,12 @@ const CDataInitializer *CAstExpression::Evaluate(void) const { return NULL; }
 const CType* GetTypeWithMsg(CAstExpression *e, CToken *t, string *msg)
 {
   const CAstBinaryOp *b = dynamic_cast<const CAstBinaryOp*>(e);
-  if(b == NULL) return e->GetType();
+  if(b == NULL) {
+    cerr << e->GetToken().GetValue() << endl;
+    bool res = e->TypeCheck(t, msg);
+    if(res == false) return NULL;
+    return e->GetType();
+  }
   const CType *symoblType = NULL;
   const CType *lt = GetTypeWithMsg(b->GetLeft(), t, msg);
   const CType *rt = GetTypeWithMsg(b->GetRight(), t, msg);
@@ -435,19 +440,17 @@ bool CAstUnaryOp::TypeCheck(CToken *t, string *msg)
   EOperation op = GetOperation();
   if(op != opNeg) return GetOperand()->TypeCheck(t, msg);
   CAstExpression *e = GetOperand();
-  cerr << "inside unaryop " <<  e->GetToken().GetValue() << endl;
-  while(dynamic_cast<CAstBinaryOp*>(e) != NULL){
+  while(dynamic_cast<CAstBinaryOp*>(e) != NULL && e->GetParenthesized() == false){
     try{
       e = dynamic_cast<CAstBinaryOp*>(e)->GetLeft();
-      if(e->GetParenthesized()) break;
     } catch(...){
       break;
     }
   }
-  cerr << "inside unaryop " <<  e->GetToken().GetValue() << endl;
-  if(dynamic_cast<CAstConstant*>(e) == NULL) return GetOperand()->TypeCheck(t, msg);
+  if(dynamic_cast<CAstConstant*>(e) == NULL) {
+    return GetOperand()->TypeCheck(t, msg);
+  }
   else if(dynamic_cast<CAstConstant*>(e)->GetType()->IsInteger() || dynamic_cast<CAstConstant*>(e)->GetType()->IsLongint()){
-    cerr << "inside unaryop " <<  e->GetToken().GetValue() << endl;
     dynamic_cast<CAstConstant*>(e)->FoldNeg();
     return dynamic_cast<CAstConstant*>(e)->TypeCheck(t, msg);
   }
@@ -468,36 +471,40 @@ const CDataInitializer *CAstUnaryOp::Evaluate(void) const {
   if (op == opPos)
     return e->Evaluate();
   else if (op == opNeg) {
-    while (1) {
-      try {
-        e = dynamic_cast<CAstBinaryOp *>(e)->GetLeft();
-        if (e->GetParenthesized()) break;
-      } catch (...) {
-        break;
-      }
-    }
-    if (e->GetParenthesized()) {
-      int val = dynamic_cast<const CDataInitInteger *>(GetOperand()->Evaluate())
+    // while(dynamic_cast<CAstBinaryOp*>(e) != NULL && e->GetParenthesized() == false) {
+    //   try{
+    //     e = dynamic_cast<CAstBinaryOp*>(e)->GetLeft();
+    //   } catch(...){
+    //     break;
+    //   }
+    // }
+    // if (dynamic_cast<CAstConstant*>(e) == NULL) {
+      
+    // } else
+    //   return new GetOperand()->Evaluate();
+    int val = dynamic_cast<const CDataInitInteger *>(GetOperand()->Evaluate())
                     ->GetData();
-      return new CDataInitInteger(-val);
-    } else
-      return GetOperand()->Evaluate();
+    return new CDataInitInteger(-val);
   } else if (op == opNot) {
-    while (1) {
-      try {
-        e = dynamic_cast<CAstBinaryOp *>(e)->GetLeft();
-        if (e->GetParenthesized()) break;
-      } catch (...) {
-        break;
-      }
-    }
-    if (e->GetParenthesized()) {
-      bool val =
-          dynamic_cast<const CDataInitBoolean *>(GetOperand()->Evaluate())
-              ->GetData();
-      return new CDataInitBoolean(!val);
-    } else
-      return GetOperand()->Evaluate();
+    bool val =
+        dynamic_cast<const CDataInitBoolean *>(GetOperand()->Evaluate())
+            ->GetData();
+    return new CDataInitBoolean(!val);
+  //   while (1) {
+  //     try {
+  //       e = dynamic_cast<CAstBinaryOp *>(e)->GetLeft();
+  //       if (e->GetParenthesized()) break;
+  //     } catch (...) {
+  //       break;
+  //     }
+  //   }
+  //   if (e->GetParenthesized()) {
+  //     bool val =
+  //         dynamic_cast<const CDataInitBoolean *>(GetOperand()->Evaluate())
+  //             ->GetData();
+  //     return new CDataInitBoolean(!val);
+  //   } else
+  //     return GetOperand()->Evaluate();
   }
   return NULL;
 }
@@ -578,7 +585,7 @@ const CType *CAstDesignator::GetType(void) const {
 const CDataInitializer *CAstDesignator::Evaluate(void) const {
   // TODO (phase 3)
   const CSymbol *s = GetSymbol();
-  cerr << s->GetName() << endl;
+  // cerr << s->GetName() << endl;
   return s->GetData();
 }
 
