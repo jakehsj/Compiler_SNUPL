@@ -561,9 +561,10 @@ CAstStatement *CParser::statSequence(CAstScope *s) {
         case tIdent: {
           CToken t1 = _scanner->Peek();
           ESymbolType stype;
-          stype = s->GetSymbolTable()
-                      ->FindSymbol(t1.GetValue(), sGlobal)
-                      ->GetSymbolType();
+          const CSymbol *cc = s->GetSymbolTable()
+                    ->FindSymbol(t1.GetValue(), sGlobal);
+          if(cc == NULL)  SetError(t1, "undefined symbol");
+          
           if (stype == stProcedure)
             st = subroutineCall(s);
           else
@@ -877,11 +878,6 @@ CAstDesignator *CParser::qualident(CAstScope *scope) {
   CToken t;
   Consume(tIdent, &t);
   const CSymbol *s = scope->GetSymbolTable()->FindSymbol(t.GetValue(), sGlobal);
-  cerr << s << endl;
-  cerr << "name:" << s->GetName() << endl;
-  if(s == NULL){
-    SetError(t, "use before def");
-  }
   if (_scanner->Peek().GetType() == tLBrak) {
     CAstArrayDesignator *d = new CAstArrayDesignator(t, s);
     while (_scanner->Peek().GetType() == tLBrak) {
