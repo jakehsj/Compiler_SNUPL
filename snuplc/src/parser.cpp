@@ -292,7 +292,8 @@ void CParser::constDeclaration(CAstScope *scope) {
     CType *ty = varDecl(idents, scope);
     Consume(tRelOp);
     CAstExpression *cExp = expression(scope);
-    CDataInitializer *dataInit = const_cast<CDataInitializer *>(cExp->Evaluate());
+    CDataInitializer *dataInit =
+        const_cast<CDataInitializer *>(cExp->Evaluate());
     for (auto &i : idents) {
       CSymbol *s = scope->CreateConst(i, ty, dataInit);
       scope->GetSymbolTable()->AddSymbol(s);
@@ -330,7 +331,7 @@ void CParser::varDeclaration(CAstScope *scope) {
   // }
 }
 
-CType *CParser::varDecl(vector<string> &idents, CAstScope* scope) {
+CType *CParser::varDecl(vector<string> &idents, CAstScope *scope) {
   //  varDecl           = ident { "," ident } ":" tm.
   CToken t;
   while (_scanner->Peek().GetType() == tIdent) {
@@ -349,15 +350,17 @@ CType *CParser::varDecl(vector<string> &idents, CAstScope* scope) {
   while (_scanner->Peek().GetType() == tLBrak) {
     Consume(tLBrak);
     CAstExpression *expr = simpleexpr(scope);
-    const CType * exprType = expr->GetType();
+    const CType *exprType = expr->GetType();
     long long exprValue;
-    if(exprType->IsLongint()){
-      const CDataInitLongint *d = dynamic_cast<const CDataInitLongint*>(expr->Evaluate());
+    if (exprType->IsLongint()) {
+      const CDataInitLongint *d =
+          dynamic_cast<const CDataInitLongint *>(expr->Evaluate());
       exprValue = d->GetData();
-    }else if (exprType->IsInt()){
-      const CDataInitInteger *d = dynamic_cast<const CDataInitInteger*>(expr->Evaluate());
+    } else if (exprType->IsInt()) {
+      const CDataInitInteger *d =
+          dynamic_cast<const CDataInitInteger *>(expr->Evaluate());
       exprValue = d->GetData();
-    }else {
+    } else {
       SetError(t, "Array index must be integer");
     }
     indexValues.push_back(exprValue);
@@ -390,8 +393,8 @@ CType *CParser::varDecl(vector<string> &idents, CAstScope* scope) {
   while (indexValues.size() > 0) {
     long long index = indexValues.back();
     indexValues.pop_back();
-    const CType *cty = CTypeManager::Get()->GetArray(index, ty);
-    ty = const_cast<CType *>(cty);
+    const CArrayType *cty = CTypeManager::Get()->GetArray(index, ty);
+    ty = const_cast<CArrayType *>(cty);
   }
   return ty;
 }
@@ -406,8 +409,9 @@ void CParser::procedureDecl(CAstScope *scope) {
   EToken subroutineType = t.GetType();
   CToken name = _scanner->Get();
 
-  if (scope->GetSymbolTable()->FindSymbol(name.GetValue(), sGlobal) != NULL){
-    SetError(name, "duplicate procedure/function declaration " + name.GetValue());
+  if (scope->GetSymbolTable()->FindSymbol(name.GetValue(), sGlobal) != NULL) {
+    SetError(name,
+             "duplicate procedure/function declaration " + name.GetValue());
   }
   vector<pair<vector<string>, CType *>> varDeclSequence;
   EToken eToken;
@@ -509,7 +513,7 @@ void CParser::procedureDecl(CAstScope *scope) {
     Consume(tIdent, &endid);
     if (endid.GetValue() != name.GetValue()) {
       SetError(endid, "Procedure identifier mismatch (" + name.GetValue() +
-                           " and " + endid.GetValue() + ")");
+                          " and " + endid.GetValue() + ")");
     }
   }
   Consume(tSemicolon);
@@ -569,9 +573,9 @@ CAstStatement *CParser::statSequence(CAstScope *s) {
         case tIdent: {
           CToken t1 = _scanner->Peek();
           ESymbolType stype;
-          const CSymbol *cc = s->GetSymbolTable()
-                    ->FindSymbol(t1.GetValue(), sGlobal);
-          if(cc == NULL)  SetError(t1, "undefined symbol");
+          const CSymbol *cc =
+              s->GetSymbolTable()->FindSymbol(t1.GetValue(), sGlobal);
+          if (cc == NULL) SetError(t1, "undefined symbol");
           stype = cc->GetSymbolType();
           if (stype == stProcedure)
             st = subroutineCall(s);
@@ -712,7 +716,6 @@ CAstStatAssign *CParser::assignment(CAstScope *s) {
   Consume(tAssign, &t);
 
   CAstExpression *rhs = expression(s);
-
   return new CAstStatAssign(t, lhs, rhs);
 }
 
@@ -805,8 +808,10 @@ CAstExpression *CParser::term(CAstScope *s) {
     CToken t;
     CAstExpression *l = n, *r;
 
-    if(tt == tMulDiv) Consume(tMulDiv, &t);
-    else Consume(tAnd, &t);
+    if (tt == tMulDiv)
+      Consume(tMulDiv, &t);
+    else
+      Consume(tAnd, &t);
     r = factor(s);
     if (t.GetValue() == "&&") {
       n = new CAstBinaryOp(t, opAnd, l, r);
@@ -861,13 +866,29 @@ CAstExpression *CParser::factor(CAstScope *s) {
       // qualident | subroutineCall
       CToken t1 = _scanner->Peek();
       ESymbolType stype;
-      
-      const CSymbol *cc = s->GetSymbolTable()
-                    ->FindSymbol(t1.GetValue(), sGlobal);
-      if(cc == NULL)  SetError(t1, "undefined symbol");
+
+      const CSymbol *cc =
+          s->GetSymbolTable()->FindSymbol(t1.GetValue(), sGlobal);
+      if (cc == NULL) SetError(t1, "undefined symbol");
       stype = cc->GetSymbolType();
       if (stype == stProcedure) {
         n = functionCall(s);
+      } else if (stype == stConstant) {
+        n = qualident(s);
+        if (n->GetType()->IsInteger()) {
+          n = new CAstConstant(t, CTypeManager::Get()->GetInteger(),
+                               ((CDataInitInteger *)n->Evaluate())->GetData());
+        } else if (n->GetType()->IsLongint()) {
+          n = new CAstConstant(t, CTypeManager::Get()->GetLongint(),
+                               ((CDataInitLongint *)n->Evaluate())->GetData());
+        } else if (n->GetType()->IsChar()) {
+          n = new CAstConstant(t, CTypeManager::Get()->GetChar(),
+                               ((CDataInitChar *)n->Evaluate())->GetData());
+        } else if (n->GetType()->IsBoolean()) {
+          n = new CAstConstant(t, CTypeManager::Get()->GetBool(),
+                               ((CDataInitBoolean *)n->Evaluate())->GetData());
+        }
+        // case: string
       } else {
         n = qualident(s);
       }
@@ -888,12 +909,20 @@ CAstDesignator *CParser::qualident(CAstScope *scope) {
   CToken t;
   Consume(tIdent, &t);
   const CSymbol *s = scope->GetSymbolTable()->FindSymbol(t.GetValue(), sGlobal);
-  if(s == NULL) SetError(t, "undefined symbol");
+  if (s == NULL) SetError(t, "undefined symbol");
   if (_scanner->Peek().GetType() == tLBrak) {
     CAstArrayDesignator *d = new CAstArrayDesignator(t, s);
     while (_scanner->Peek().GetType() == tLBrak) {
       Consume(tLBrak);
       CAstExpression *e = expression(scope);
+      if (!e->GetType()->IsInt()) SetError(t, "invalid array index: not int");
+      long long index;
+      if (e->GetType()->IsInteger()) {
+        index = ((CDataInitInteger *)e->Evaluate())->GetData();
+      } else if (e->GetType()->IsLongint()) {
+        index = ((CDataInitLongint *)e->Evaluate())->GetData();
+      }
+      if (index < 0) SetError(t, "invalid array index: negative value");
       Consume(tRBrak);
       d->AddIndex(e);
     }
