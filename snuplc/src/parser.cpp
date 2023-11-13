@@ -497,7 +497,12 @@ void CParser::procedureDecl(CAstScope *scope) {
     CAstStatement *statseq = statSequence(astProc);
     astProc->SetStatementSequence(statseq);
     Consume(tEnd);
-    Consume(tIdent);
+    CToken endid;
+    Consume(tIdent, &endid);
+    if (endid.GetValue() != name.GetValue()) {
+      SetError(endid, "Procedure identifier mismatch (" + name.GetValue() +
+                           " and " + endid.GetValue() + ")");
+    }
   }
   Consume(tSemicolon);
 }
@@ -872,7 +877,11 @@ CAstDesignator *CParser::qualident(CAstScope *scope) {
   CToken t;
   Consume(tIdent, &t);
   const CSymbol *s = scope->GetSymbolTable()->FindSymbol(t.GetValue(), sGlobal);
-
+  cerr << s << endl;
+  cerr << "name:" << s->GetName() << endl;
+  if(s == NULL){
+    SetError(t, "use before def");
+  }
   if (_scanner->Peek().GetType() == tLBrak) {
     CAstArrayDesignator *d = new CAstArrayDesignator(t, s);
     while (_scanner->Peek().GetType() == tLBrak) {

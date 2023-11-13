@@ -507,7 +507,9 @@ const CType* CAstFunctionCall::GetType(void) const
 bool CAstDesignator::TypeCheck(CToken *symoblType, string *msg)
 {
   // TODO (phase 3)
-
+  const CSymbol *s = GetSymbol();
+  CSymtab* symtab = s->GetSymbolTable();
+  // if(sym)
   return true;
 }
 
