@@ -194,7 +194,7 @@ bool CLongintType::CanWiden(const CType *t) const
   // TODO (phase 3)
   // if you want to support implicit wideing, add
   // some code here
-  return false;
+  return t->IsInt();
 }
 
 ostream& CLongintType::print(ostream &out, int indent) const
@@ -237,8 +237,9 @@ bool CPointerType::Match(const CType *t) const
   // match if:
   // - this is a void pointer or
   // - the types are compatible with respect to Match()
+  return GetBaseType()->Match(pt->GetBaseType());
 
-  return false;
+  // return false;
 }
 
 bool CPointerType::Compare(const CType *t) const
@@ -254,8 +255,9 @@ bool CPointerType::Compare(const CType *t) const
   // comparison: match if
   // - this is a void pointer or
   // - the types are compatible with respect to Compare()
+  return GetBaseType()->Compare(pt->GetBaseType());
 
-  return false;
+  // return false;
 }
 
 ostream& CPointerType::print(ostream &out, int indent) const
@@ -333,8 +335,9 @@ bool CArrayType::Match(const CType *t) const
   // match if:
   // - (this is an open array or the number of elements match) and
   // - the inner types are compatible with respect to Match()
+  return GetBaseType()->Match(at->GetBaseType());
 
-  return false;
+  // return false;
 }
 
 bool CArrayType::Compare(const CType *t) const
@@ -350,8 +353,9 @@ bool CArrayType::Compare(const CType *t) const
   // comparison: match if
   // - the number of elements match and
   // - the inner types are compatible with respect to Compare()
+  return GetBaseType()->Compare(at->GetBaseType());
 
-  return false;
+  // return false;
 }
 
 ostream& CArrayType::print(ostream &out, int indent) const

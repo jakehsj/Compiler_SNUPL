@@ -312,6 +312,10 @@ void CParser::varDeclaration(CAstScope *scope) {
     CType *ty = varDecl(idents, scope);
     for (auto &i : idents) {
       CSymbol *s = scope->CreateVar(i, ty);
+      const CSymbol *cc = scope->GetSymbolTable()->FindSymbol(i, sLocal);
+      if (cc != NULL) {
+        SetError(_scanner->Peek(), "duplicate identifier " + i);
+      }
       scope->GetSymbolTable()->AddSymbol(s);
     }
     Consume(tSemicolon);
@@ -401,6 +405,10 @@ void CParser::procedureDecl(CAstScope *scope) {
   CToken t = _scanner->Get();
   EToken subroutineType = t.GetType();
   CToken name = _scanner->Get();
+
+  if (scope->GetSymbolTable()->FindSymbol(name.GetValue(), sGlobal) != NULL){
+    SetError(name, "duplicate procedure/function declaration " + name.GetValue());
+  }
   vector<pair<vector<string>, CType *>> varDeclSequence;
   EToken eToken;
 
@@ -564,7 +572,7 @@ CAstStatement *CParser::statSequence(CAstScope *s) {
           const CSymbol *cc = s->GetSymbolTable()
                     ->FindSymbol(t1.GetValue(), sGlobal);
           if(cc == NULL)  SetError(t1, "undefined symbol");
-          
+          stype = cc->GetSymbolType();
           if (stype == stProcedure)
             st = subroutineCall(s);
           else
@@ -793,12 +801,12 @@ CAstExpression *CParser::term(CAstScope *s) {
 
   EToken tt = _scanner->Peek().GetType();
 
-  while (tt == tMulDiv) {
+  while (tt == tMulDiv || tt == tAnd) {
     CToken t;
     CAstExpression *l = n, *r;
 
-    Consume(tMulDiv, &t);
-
+    if(tt == tMulDiv) Consume(tMulDiv, &t);
+    else Consume(tAnd, &t);
     r = factor(s);
     if (t.GetValue() == "&&") {
       n = new CAstBinaryOp(t, opAnd, l, r);
@@ -853,9 +861,11 @@ CAstExpression *CParser::factor(CAstScope *s) {
       // qualident | subroutineCall
       CToken t1 = _scanner->Peek();
       ESymbolType stype;
-      stype = s->GetSymbolTable()
-                  ->FindSymbol(t1.GetValue(), sGlobal)
-                  ->GetSymbolType();
+      
+      const CSymbol *cc = s->GetSymbolTable()
+                    ->FindSymbol(t1.GetValue(), sGlobal);
+      if(cc == NULL)  SetError(t1, "undefined symbol");
+      stype = cc->GetSymbolType();
       if (stype == stProcedure) {
         n = functionCall(s);
       } else {
@@ -878,6 +888,7 @@ CAstDesignator *CParser::qualident(CAstScope *scope) {
   CToken t;
   Consume(tIdent, &t);
   const CSymbol *s = scope->GetSymbolTable()->FindSymbol(t.GetValue(), sGlobal);
+  if(s == NULL) SetError(t, "undefined symbol");
   if (_scanner->Peek().GetType() == tLBrak) {
     CAstArrayDesignator *d = new CAstArrayDesignator(t, s);
     while (_scanner->Peek().GetType() == tLBrak) {

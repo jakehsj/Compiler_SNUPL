@@ -111,12 +111,25 @@ bool CAstStatAssign::TypeCheck(CToken *symoblType, string *msg)
   bool result = _lhs->TypeCheck(symoblType, msg) && _rhs->TypeCheck(symoblType, msg);
   
   result = result && _lhs->GetType()->Match((_rhs->GetType()));
-
+  if(_lhs->GetType()->IsInteger() && _rhs->GetType()->IsLongint()) {
+    result = false;
+    *symoblType = GetToken();
+    *msg = string("incompatible types in assignment:\n") + "\tLHS: " + _lhs->GetType()->GetName() + "\n\tRHS: " + _rhs->GetType()->GetName() + "\n";
+  }
   return result;
 }
 
 const CType* CAstStatAssign::GetType(void) const
 {
+  // const CType * lType = _lhs->GetType();
+  // const CType * rType = _rhs->GetType();
+
+  // bool isValid = lType->Match(rType);
+
+  // if(lType->IsInteger() && rType->IsLongint()){
+  //   isValid = false;
+  // }
+  // return isValid ? lType : NULL;
   return _lhs->GetType();
 }
 
@@ -254,7 +267,7 @@ const CType* CAstBinaryOp::GetType(void) const
       symoblType = NULL;
     }
   } else if(op == opAdd || op == opSub || op == opMul || op == opDiv) {
-    if(lt->IsInteger() || rt->IsInteger()){
+    if(lt->IsInteger() && rt->IsInteger()){
       symoblType = CTypeManager::Get()->GetInteger();
     } else if(lt->IsLongint() && rt->IsLongint()) {
       symoblType = CTypeManager::Get()->GetLongint();
@@ -285,6 +298,10 @@ const CDataInitializer* CAstBinaryOp::Evaluate(void) const
   const CType *t2 = GetRight()->GetType();
   const CDataInitializer *l = GetLeft()->Evaluate();
   const CDataInitializer *r = GetRight()->Evaluate();
+
+  if(l == NULL || r == NULL)
+    return NULL;
+  
   CDataInitializer *result = NULL;
   const EOperation op = GetOperation();
 
@@ -507,10 +524,13 @@ const CType* CAstFunctionCall::GetType(void) const
 bool CAstDesignator::TypeCheck(CToken *symoblType, string *msg)
 {
   // TODO (phase 3)
+  bool valid = true;
   const CSymbol *s = GetSymbol();
   CSymtab* symtab = s->GetSymbolTable();
-  // if(sym)
-  return true;
+  if(symtab->FindSymbol(s->GetName(), sGlobal) == NULL){
+    valid = false;
+  }
+  return valid;
 }
 
 const CType* CAstDesignator::GetType(void) const
