@@ -862,12 +862,28 @@ CAstExpression *CParser::factor(CAstScope *s) {
       CToken t1 = _scanner->Peek();
       ESymbolType stype;
       
-      const CSymbol *cc = s->GetSymbolTable()
-                    ->FindSymbol(t1.GetValue(), sGlobal);
-      if(cc == NULL)  SetError(t1, "undefined symbol");
+     const CSymbol *cc =
+          s->GetSymbolTable()->FindSymbol(t1.GetValue(), sGlobal);
+      if (cc == NULL) SetError(t1, "undefined symbol");
       stype = cc->GetSymbolType();
       if (stype == stProcedure) {
         n = functionCall(s);
+      } else if (stype == stConstant) {
+        n = qualident(s);
+        if (n->GetType()->IsInteger()) {
+          n = new CAstConstant(t, CTypeManager::Get()->GetInteger(),
+                               ((CDataInitInteger *)n->Evaluate())->GetData());
+        } else if (n->GetType()->IsLongint()) {
+          n = new CAstConstant(t, CTypeManager::Get()->GetLongint(),
+                               ((CDataInitLongint *)n->Evaluate())->GetData());
+        } else if (n->GetType()->IsChar()) {
+          n = new CAstConstant(t, CTypeManager::Get()->GetChar(),
+                               ((CDataInitChar *)n->Evaluate())->GetData());
+        } else if (n->GetType()->IsBoolean()) {
+          n = new CAstConstant(t, CTypeManager::Get()->GetBool(),
+                               ((CDataInitBoolean *)n->Evaluate())->GetData());
+        }
+        // case: string
       } else {
         n = qualident(s);
       }
@@ -889,6 +905,9 @@ CAstDesignator *CParser::qualident(CAstScope *scope) {
   Consume(tIdent, &t);
   const CSymbol *s = scope->GetSymbolTable()->FindSymbol(t.GetValue(), sGlobal);
   if(s == NULL) SetError(t, "undefined symbol");
+  if(_scanner->Peek().GetType() == tLParens){
+    SetError(t, "invalid procedure/function identifier " + t.GetValue());
+  }
   if (_scanner->Peek().GetType() == tLBrak) {
     CAstArrayDesignator *d = new CAstArrayDesignator(t, s);
     while (_scanner->Peek().GetType() == tLBrak) {
@@ -981,9 +1000,13 @@ CAstUnaryOp *CParser::unaryOp(CAstScope *s) {
     op = opPos;
   else if (t.GetValue() == "-")
     op = opNeg;
+  else if (t.GetValue() == "!")
+    op = opNot;
   else
     SetError(t, "invalid unary operator.");
   CAstExpression *e = term(s);
+  cerr << t.GetValue() << endl;
+  cerr << e->GetType() << endl;
   return new CAstUnaryOp(t, op, e);
 }
 
