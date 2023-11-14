@@ -685,7 +685,8 @@ CAstStatReturn *CParser::returnStatement(CAstScope *scope) {
   Consume(tReturn, &t);
   CAstExpression *expr = NULL;
   if (_scanner->Peek().GetType() != tSemicolon &&
-      _scanner->Peek().GetType() != tEnd) {
+      _scanner->Peek().GetType() != tEnd &&
+      _scanner->Peek().GetType() != tElse) {
     expr = expression(scope);
   }
 
@@ -781,10 +782,11 @@ CAstExpression *CParser::simpleexpr(CAstScope *scope) {
     CAstUnaryOp *tmp = unaryOp(scope);
     EOperation op = tmp->GetOperation();
     CAstExpression *e = tmp->GetOperand();
+    CAstExpression *prev = n;
     if(op == opNeg){
-      string *msg;
-      bool res = tmp->TypeCheck(&t1, msg);
-      if(!res) SetError(tmp->GetToken(), *msg);
+      string msg;
+      bool res = tmp->TypeCheck(&t1, &msg);
+      // if(!res) SetError(tmp->GetToken(), msg);
       while(dynamic_cast<CAstBinaryOp*>(e) != NULL && e->GetParenthesized() == false){
         try{
           e = dynamic_cast<CAstBinaryOp*>(e)->GetLeft();
@@ -792,8 +794,13 @@ CAstExpression *CParser::simpleexpr(CAstScope *scope) {
           break;
         }
       }
-      if(dynamic_cast<CAstConstant *>(e) != NULL) n = e;
-      else n = tmp;
+      // leftmost child is CAstConstant and not parenthesized
+      if(dynamic_cast<CAstConstant *>(e) != NULL && e->GetParenthesized() == false){
+        n = tmp->GetOperand();
+      }
+      else {
+        n = tmp;
+      }
     }
   } else {
     n = term(scope);

@@ -10,7 +10,7 @@ if [ ! -z "$test_number" ]; then
     dot -Tpdf -o../test/semanal/test${formatted_i}.mod.ast.pdf ../test/semanal/test${formatted_i}.mod.ast.dot
 else
     # 인자가 주어지지 않은 경우 모든 테스트를 실행
-    for i in {01..21}; do
+    for i in {01..25}; do
         formatted_i=$(printf "%02d" $i)
         ./test_semanal ../test/semanal/test${formatted_i}.mod > ../test/semanal/test${formatted_i}.mod.out
         dot -Tpdf -o../test/semanal/test${formatted_i}.mod.ast.pdf ../test/semanal/test${formatted_i}.mod.ast.dot

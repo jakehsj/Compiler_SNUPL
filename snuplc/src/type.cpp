@@ -99,6 +99,7 @@ bool CScalarType::Match(const CType *t) const
   if(IsLongint() && t->IsInteger()) return true;
   if(IsInteger() && t->IsLongint()) return true;
   if(IsInteger() && t->IsInteger()) return true;
+  if(IsNull() && t->IsNull()) return true;
   return false;
 }
 

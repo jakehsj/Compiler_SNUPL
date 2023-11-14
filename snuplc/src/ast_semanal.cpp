@@ -207,7 +207,7 @@ const CType* GetTypeWithMsg(CAstExpression *e, CToken *t, string *msg)
 {
   const CAstBinaryOp *b = dynamic_cast<const CAstBinaryOp*>(e);
   if(b == NULL) {
-    cerr << e->GetToken().GetValue() << endl;
+    // cerr << e->GetToken().GetValue() << endl;
     bool res = e->TypeCheck(t, msg);
     if(res == false) return NULL;
     return e->GetType();
@@ -447,7 +447,10 @@ bool CAstUnaryOp::TypeCheck(CToken *t, string *msg)
       break;
     }
   }
-  if(dynamic_cast<CAstConstant*>(e) == NULL) {
+  // e is constant or e is parenthesized or both
+
+  // e is not a constant or parenthesized constant
+  if(dynamic_cast<CAstConstant*>(e) == NULL || e->GetParenthesized() == true) {
     return GetOperand()->TypeCheck(t, msg);
   }
   else if(dynamic_cast<CAstConstant*>(e)->GetType()->IsInteger() || dynamic_cast<CAstConstant*>(e)->GetType()->IsLongint()){
