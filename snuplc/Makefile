@@ -46,7 +46,7 @@ DOXYFILE=doc/Doxyfile
 #
 .PHONY: doc clean mrproper
 
-all: test_semanal
+all: test_ir
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(DEP_DIR) $(OBJ_DIR)
 	$(CC) $(CCFLAGS) $(DEPFLAGS) -c -o $@ $<
@@ -68,6 +68,10 @@ test_parser: $(OBJ_DIR)/test_parser.o $(OBJ_PARSER)
 
 test_semanal: $(OBJ_DIR)/test_semanal.o $(OBJ_PARSER)
 	$(CC) $(CCFLAGS) -o $@ $(OBJ_DIR)/test_semanal.o $(OBJ_PARSER)
+
+test_ir: $(OBJ_DIR)/test_ir.o $(OBJ_PARSER)
+	$(CC) $(CCFLAGS) -o $@ $(OBJ_DIR)/test_ir.o $(OBJ_PARSER)
+
 doc:
 	doxygen $(DOXYFILE)
 
@@ -75,5 +79,5 @@ clean:
 	rm -rf $(OBJ_DIR) $(DEP_DIR)
 
 mrproper: clean
-	rm -rf doc/html test_scanner test_parser test_semanal
+	rm -rf doc/html test_scanner test_parser test_semanal test_ir
 
