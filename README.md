@@ -19,7 +19,7 @@ The project is split into the following phases:
 | 1     | [Lexical Analysis](assignments/1.Lexical.Analysis.md)  |
 | 2     | [Syntax Analysis](assignments/2.Syntax.Analysis.md)    |
 | 3     | [Semantic Analysis](assignments/3.Semantic.Analysis.md)|
-| 4     | [Intermediate Code Generation](assignments/4.Intermediate.Code.Generation.md)|
+| 4     | [Intermediate Code Generation]|
 | 5     | Code Generation                                        |
 | 6     | Project Report                                         |
 
